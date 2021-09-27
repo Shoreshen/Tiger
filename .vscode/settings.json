@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "bit": "cpp",
+        "compare": "cpp",
+        "cstddef": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "limits": "cpp",
+        "memory": "cpp",
+        "new": "cpp",
+        "functional": "cpp"
+    }
+}
