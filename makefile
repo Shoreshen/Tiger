@@ -11,7 +11,7 @@ clean:
 	rm ./ch1/*.out
 PHONY += clean
 # GitHub ========================================================================================
-commit:
+commit: clean
 	git add -A
 	@echo "Please type in commit comment: "; \
 	read comment; \
