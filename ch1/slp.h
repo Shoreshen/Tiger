@@ -1,3 +1,5 @@
+#pragma once
+
 #include "util.h"
 
 typedef struct A_stm_ *A_stm;
