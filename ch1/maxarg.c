@@ -1,5 +1,9 @@
 #include "maxarg.h"
 
+void visit_stmt(A_stm a, void* ptr);
+void visit_exp_list(A_expList a, void* ptr);
+void visit_exp(A_exp a, void* ptr);
+
 int maxcnt = 0;
 
 int maxargs(A_stm a)
@@ -27,7 +31,7 @@ void visit_stmt(A_stm a, void* ptr)
             }
             break;
         default:
-            break;
+            printf("Unaccepted stmt\n");
     }
 }
 
@@ -43,7 +47,7 @@ void visit_exp_list(A_expList a, void* ptr)
             visit_exp(a->u.last, ptr);
             break;
         default:
-            break;
+            printf("Unaccepted exp list\n");
     }
 }
 
@@ -63,6 +67,6 @@ void visit_exp(A_exp a, void* ptr)
         case A_numExp:
             break;
         default:
-            break;
+            printf("Unaccepted exp\n");
     }
 }

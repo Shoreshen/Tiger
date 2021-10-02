@@ -14,12 +14,14 @@ clean:
 	rm ./ch1/*.out
 PHONY += clean
 # GitHub ========================================================================================
+sub_pull:
+	git submodule foreach --recursive 'git pull'
 commit: clean
 	git add -A
 	@echo "Please type in commit comment: "; \
 	read comment; \
 	git commit -m"$$comment"
-sync: commit 
+sync: sub_pull commit 
 	git push -u origin master
 
 PHONY += commit sync
