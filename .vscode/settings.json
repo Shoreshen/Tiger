@@ -8,6 +8,9 @@
         "limits": "cpp",
         "memory": "cpp",
         "new": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "interp.h": "c",
+        "slp.h": "c",
+        "util.h": "c"
     }
 }

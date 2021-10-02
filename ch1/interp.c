@@ -1,12 +1,16 @@
 #include "interp.h"
 
 void eval_stmt(A_stm a);
-void eval_exp_list(A_expList a);
-int eval_exp(A_exp a);
+long eval_exp(A_exp a);
+
+// Hash table header for UT-HASH
+// Must be initialized as NULL
+// struct table_entry *head = NULL;
+struct table_entry *head = NULL;
 
 void interp(A_stm a) 
 {
-
+    eval_stmt(a);
 }
 
 void eval_stmt(A_stm a) 
@@ -15,34 +19,24 @@ void eval_stmt(A_stm a)
         case A_compoundStm:
             eval_stmt(a->u.compound.stm1);
             eval_stmt(a->u.compound.stm2);
-            break;
+            return;
         case A_assignStm:
-            eval_exp(a->u.assign.exp);
-            break;
+            update_table_str(&head, a->u.assign.id, eval_exp(a->u.assign.exp));
+            return;
         case A_printStm:
-            eval_exp_list(a->u.print.exps);
-            break;
+            A_expList list = a->u.print.exps;
+            while (list->kind == A_pairExpList) {
+                printf("%d,", eval_exp(list->u.pair.head));
+                list = list->u.pair.tail;
+            }
+            printf("%d\n", eval_exp(list->u.last));
+            return;
         default:
             printf("Unaccepted stmt\n");
     }
 }
 
-void eval_exp_list(A_expList a)
-{
-    switch (a->kind) {
-        case A_pairExpList:
-            eval_exp(a->u.pair.head);
-            eval_exp_list(a->u.pair.tail);
-            break;
-        case A_lastExpList:
-            eval_exp(a->u.last);
-            break;
-        default:
-            printf("Unaccepted exp list\n");
-    }
-}
-
-int eval_exp(A_exp a) 
+long eval_exp(A_exp a) 
 {
     switch (a->kind) {
         case A_opExp:
@@ -58,14 +52,15 @@ int eval_exp(A_exp a)
                 default:
                     printf("Unrecorgnized operator\n");
             }
-            break;
         case A_eseqExp:
-            break;
+            eval_stmt(a->u.eseq.stm);
+            return eval_exp(a->u.eseq.exp);
         case A_idExp:
-            break;
+            return lookup_str(&head, a->u.id);
         case A_numExp:
-            break;
+            return (long)a->u.num;
         default:
             printf("Unaccepted exp\n");
     }
+    return 0;
 }

@@ -1,6 +1,7 @@
 #include "util.h"
 #include "slp.h"
 #include "maxarg.h"
+#include "interp.h"
 
 int main() 
 {
@@ -42,6 +43,7 @@ int main()
             )
         )
     );
-    printf("max print arg count: %d", maxargs(prog));
+    printf("max print arg count: %d\n", maxargs(prog));
+    interp(prog);
     return 0;
 }
