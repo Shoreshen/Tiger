@@ -11,6 +11,7 @@
         "functional": "cpp",
         "interp.h": "c",
         "slp.h": "c",
-        "util.h": "c"
+        "util.h": "c",
+        "errormsg.h": "c"
     }
 }
