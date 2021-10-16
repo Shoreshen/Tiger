@@ -36,12 +36,10 @@ int main(int argc, char **argv) {
     fname = argv[1];
 
     EM_reset(fname);
-    
-    for(;;) {
-        tok = yylex();
-        if (tok == 0) {
-            break;
-        }
+
+    tok = yylex();
+
+    while(tok) {
         switch(tok) {
             case ID: case STRING:
                 printf("%10s %4d %s\n",tokname(tok),EM_tokPos,yylval.sval);
@@ -52,6 +50,8 @@ int main(int argc, char **argv) {
             default:
                 printf("%10s %4d\n",tokname(tok),EM_tokPos);
         }
+        tok = yylex();
     }
+
     return 0;
 }
