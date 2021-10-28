@@ -6,6 +6,7 @@
 PHONY 		= 
 CFLAGS		= -g -m64
 CH1_FILES	= $(shell ls ./ch1/*.c)
+BISON_FLAG	:= -d -Wcounterexamples
 # ch1 ===========================================================================================
 ch1.out:$(CH1_FILES)
 	gcc $(CFLAGS) ./ch1/*.c -o $@
@@ -18,10 +19,18 @@ PHONY += ch1
 	flex --outfile=$@ ./ch2/tiger.l
 ch2.out:./ch2/tiger.yy.c
 	gcc $(CFLAGS) ./ch2/*.c -o $@
+# ch3 ===========================================================================================
+./ch3/tiger.tab.c ./ch3/tiger.tab.h: ./ch3/tiger.y
+	bison -d -Wcounterexamples -o ./ch3/tiger.tab.c $<
+./ch3/tiger.yy.c:./ch3/tiger.tab.h
+	flex --outfile=$@ ./ch3/tiger.l
+ch3.out:./ch2/tiger.yy.c
+	gcc $(CFLAGS) ./ch2/*.c -o $@
 # Clean =========================================================================================
 clean:
 	-rm *.out
 	-rm ./ch2/*.yy.c
+	-rm ./ch3/*.yy.c ./ch3/*.tab.*
 PHONY += clean
 # GitHub ========================================================================================
 sub_pull:
