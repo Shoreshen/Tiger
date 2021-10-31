@@ -3,8 +3,6 @@
 
 typedef struct intList {int i; struct intList *rest;} *IntList;
 
-extern FILE *yyin;
-
 bool anyErrors          = FALSE;
 static char* fileName   = "";
 static int lineNum      = 1;
@@ -12,6 +10,9 @@ int EM_tokPos           = 0;
 static IntList linePos  = NULL;
 int charPos             = 1;
 
+void yyerror(char *s) {
+  EM_error(EM_tokPos, "%s", s);
+}
 
 U_boolList U_BoolList(bool head, U_boolList tail)
 { 
@@ -30,7 +31,7 @@ static IntList intList(int i, IntList rest)
     return l;
 }
 
-void adjust(void)
+void adjust(char* yytext)
 {
     EM_tokPos = charPos;
     charPos += yyleng;
@@ -75,7 +76,7 @@ void EM_reset(char* fname)
     fileName    = fname; 
     lineNum     = 1;
     linePos     = intList(0,NULL);
-    yyin        = fopen(fname,"r");
+    yyin        = fopen(fname,"r"); // Setting the input parsing file
 
     if (!yyin) {
         EM_error(0,"cannot open"); exit(1);

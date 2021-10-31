@@ -126,6 +126,13 @@ field_list:
 
 lvalue:
     ID
+    /*
+        When stack{ID . '['} due to precedence{line:21} do not reduce to `lvalue`
+        Then stack{ID '[' exp ']' . tok} and tok is not `OF`.
+        Because bision has to reduce from the stack top, so now it has no rule to reduce or no next state to jump
+        Thus adding the following rule to handle this situation
+    */
+    | ID '[' exp ']'
     | lvalue '.' ID
     | lvalue '[' exp ']' 
 ;

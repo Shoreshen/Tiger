@@ -12,6 +12,17 @@
 %x INSTRING
 
 %%
+
+[ \t\r]	{
+	adjust(); 
+}
+
+  /* newline */
+\n {
+	adjust(); 
+	EM_newline(); 
+}
+
  /* punctuation symbols */
 ","	   {
 	adjust();
@@ -218,7 +229,6 @@
 <INSTRING>\"  {
 	adjust(); 
 	yylval.sval = curr_str.data; 
-	free(curr_str.data);
 	curr_str.len = 0;
 	curr_str.cap = 0;
 	BEGIN(INITIAL); 

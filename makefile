@@ -8,24 +8,32 @@ CFLAGS		= -g -m64
 CH1_FILES	= $(shell ls ./ch1/*.c)
 BISON_FLAG	:= -d -Wcounterexamples
 # ch1 ===========================================================================================
-ch1.out:$(CH1_FILES)
+ch1.out:/ch1/*.c
 	gcc $(CFLAGS) ./ch1/*.c -o $@
 run_ch1:ch1.out
 	./$<
 
 PHONY += ch1
 # ch2 ===========================================================================================
-./ch2/tiger.yy.c:
-	flex --outfile=$@ ./ch2/tiger.l
+./ch2/tiger.yy.c:./ch2/tiger.l
+	flex --outfile=$@ $<
 ch2.out:./ch2/tiger.yy.c
 	gcc $(CFLAGS) ./ch2/*.c -o $@
+run_ch2:ch2.out
+	@echo "Please type in file names: "; \
+	read file; \
+	./$< $$file
 # ch3 ===========================================================================================
 ./ch3/tiger.tab.c ./ch3/tiger.tab.h: ./ch3/tiger.y
 	bison -d -Wcounterexamples -o ./ch3/tiger.tab.c $<
-./ch3/tiger.yy.c:./ch3/tiger.tab.h
+./ch3/tiger.yy.c:./ch3/tiger.tab.h ./ch3/tiger.l
 	flex --outfile=$@ ./ch3/tiger.l
-ch3.out:./ch2/tiger.yy.c
-	gcc $(CFLAGS) ./ch2/*.c -o $@
+ch3.out:./ch3/*.c ./ch3/*.h
+	gcc $(CFLAGS) ./ch3/*.c -o $@
+run_ch3:ch3.out
+	@echo "Please type in file names: "; \
+	read file; \
+	./$< $$file
 # Clean =========================================================================================
 clean:
 	-rm *.out

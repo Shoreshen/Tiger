@@ -23,8 +23,3 @@ void* checked_malloc(int len);
 void init_str(struct string* str);
 void put_str(struct string* str, char src);
 void append_str(struct string* str, char* src);
-
-// yyleng = length of matched token, for flex
-extern int yyleng;
-// yylex() read the next token and return, for flex
-extern int yylex();

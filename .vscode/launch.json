@@ -22,6 +22,44 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "ch2",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ch2.out",
+            "args": ["/home/shore/OneDrive/Tiger/testcases/test32.tig"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "ch3",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ch3.out",
+            "args": ["/home/shore/OneDrive/Tiger/testcases/test24.tig"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }

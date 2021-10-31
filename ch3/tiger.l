@@ -1,7 +1,6 @@
 %option noyywrap yylineno nodefault
 
 %{
-    #include "tokens.h"
     #include "errormsg.h"
 	#include "util.h"
 	#include "tiger.tab.h"
@@ -13,6 +12,16 @@
 %x INSTRING
 
 %%
+[ \t\r]	{
+	adjust(yytext); 
+}
+
+  /* newline */
+\n {
+	adjust(yytext); 
+	EM_newline(); 
+}
+
  /* single charactor punctuation symbols */
 ","	   |
 ":"    |
@@ -33,101 +42,101 @@
 ">"    |
 "&"    |
 "|"    {
-	adjust();
-	yytext[0];
+	adjust(yytext);
+	return yytext[0];
 }
 
  /* multi charactor punctuation symbols */
 "<>"   {
-	adjust();
+	adjust(yytext);
 	return NEQ;
 }
 "<="   {
-	adjust();
+	adjust(yytext);
 	return LE;
 }
 ">="   {
-	adjust();
+	adjust(yytext);
 	return GE;
 }
 ":="   {
-	adjust();
+	adjust(yytext);
 	return ASSIGN;
 }
 
  /* reserved words */
 "array"    {
-	adjust();
+	adjust(yytext);
 	return ARRAY;
 }
 "if"       {
-	adjust();
+	adjust(yytext);
 	return IF;
 }
 "then"     {
-	adjust();
+	adjust(yytext);
 	return THEN;
 }
 "else"     {
-	adjust();
+	adjust(yytext);
 	return ELSE;
 }
 "while"    {
-	adjust();
+	adjust(yytext);
 	return WHILE;
 }
 "for"  	 {
-	adjust();
+	adjust(yytext);
 	return FOR;
 }
 "to"       {
-	adjust();
+	adjust(yytext);
 	return TO;
 }
 "do"       {
-	adjust();
+	adjust(yytext);
 	return DO;
 }
 "let"      {
-	adjust();
+	adjust(yytext);
 	return LET;
 }
 "in"       {
-	adjust();
+	adjust(yytext);
 	return IN;
 }
 "end"      {
-	adjust();
+	adjust(yytext);
 	return END;
 }
 "of"       {
-	adjust();
+	adjust(yytext);
 	return OF;
 }
 "break"    {
-	adjust();
+	adjust(yytext);
 	return BREAK;
 }
 "nil"      {
-	adjust();
+	adjust(yytext);
 	return NIL;
 }
 "function" {
-	adjust();
+	adjust(yytext);
 	return FUNCTION;
 }
 "var"      {
-	adjust();
+	adjust(yytext);
 	return VAR;
 }
 "type"     {
-	adjust();
+	adjust(yytext);
 	return TYPE;
 }
 
  /* identifier */
 [a-zA-Z][a-zA-Z0-9_]* {
-    adjust();
+    adjust(yytext);
     // yytext = null-terminated string for matched token
     yylval.sval = strdup(yytext); 
     return ID;
@@ -135,11 +144,11 @@
 
  /* comments */
 "/*" {
-	adjust();
+	adjust(yytext);
 	BEGIN(COMMENT);
 }
 <COMMENT>"*/" {
-	adjust();
+	adjust(yytext);
 	// INITIAL is the default begining start condition in flex
 	BEGIN(INITIAL);
 }
@@ -148,10 +157,10 @@
 	// 1. Will match non `*` string once instead of one by one
 	// 2. If `*/` is met, this rule will match only with `*`
 	// 3. Thus `*/` is a longer match, which flex prefers to match
-	adjust();
+	adjust(yytext);
 }
 <COMMENT><<EOF>> {
-	adjust();
+	adjust(yytext);
 	EM_error(EM_tokPos,"unclose comment\n");
 	// Built in function
 	// Terminate the scanner and return 0 to the caller of scaner
@@ -160,14 +169,13 @@
 
  /*String*/
 \" {
-	adjust();
+	adjust(yytext);
 	init_str(&curr_str);
 	BEGIN(INSTRING);
 }
 <INSTRING>\"  {
-	adjust(); 
+	adjust(yytext); 
 	yylval.sval = curr_str.data; 
-	free(curr_str.data);
 	curr_str.len = 0;
 	curr_str.cap = 0;
 	BEGIN(INITIAL); 
@@ -176,7 +184,7 @@
 <INSTRING>\\[0-9]{3} {
 	// \ddd, x is num, indicating the acsii code for a charactor
 	int tmp = atoi(&yytext[1]);
-	adjust();
+	adjust(yytext);
 	if (tmp > 0xff) {
 		EM_error(EM_tokPos,"ascii code out of range"); 
 		yyterminate();
@@ -184,24 +192,24 @@
 	put_str(&curr_str, (char)tmp);
 }
 <INSTRING>\\n {
-	adjust(); 
+	adjust(yytext); 
 	put_str(&curr_str, '\n');
 }
 <INSTRING>\\t {
-	adjust(); 
+	adjust(yytext); 
 	put_str(&curr_str, '\t');
 }
 <INSTRING>\\\\ {
-	adjust(); 
+	adjust(yytext); 
 	put_str(&curr_str, '\\');
 }
 <INSTRING>\\\" {
-	adjust(); 
+	adjust(yytext); 
 	put_str(&curr_str, '\"');
 }
 <INSTRING>\\[ \n\t\f]+\\ {
 	int i = 0;
-	adjust();
+	adjust(yytext);
 	while (yytext[i]) {
 		if (yytext[i] == '\n') {
 			EM_newline();
@@ -210,16 +218,16 @@
 	}
 }
 <INSTRING>[^\\\n\"]* {
-	adjust(); 
+	adjust(yytext); 
 	append_str(&curr_str, yytext);
 }
 <INSTRING>\n {
-	adjust(); 
+	adjust(yytext); 
 	EM_error(EM_tokPos,"unclose string: newline appear in string"); 
 	yyterminate();
 }
 <INSTRING><<EOF>> {
-	adjust(); 
+	adjust(yytext); 
 	EM_error(EM_tokPos,"unclose string: EOF appear in string"); 
 	yyterminate();
 }
@@ -227,14 +235,14 @@
 
  /*Integer*/
 [0-9]+ {
-	adjust();
+	adjust(yytext);
 	yylval.ival = atoi(yytext);
 	return INT;
 }
 
  /* unknown input */
 . {
-	adjust(); 
+	adjust(yytext); 
 	EM_error(EM_tokPos,"illegal token");
 }
 %%
