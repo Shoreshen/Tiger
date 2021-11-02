@@ -12,6 +12,7 @@
         "interp.h": "c",
         "slp.h": "c",
         "util.h": "c",
-        "errormsg.h": "c"
+        "errormsg.h": "c",
+        "symbol.h": "c"
     }
 }
