@@ -1,8 +1,38 @@
 %{
     #include <stdio.h>
     #include "util.h"
-    #include "errormsg.h"
+
+    void yyerror(char *s);
 %}
+
+%code requires {
+    char *yyfilename;
+
+    typedef struct YYLTYPE {
+        int first_line;
+        int first_column;
+        int last_line;
+        int last_column;
+        char *filename;
+    } YYLTYPE;
+
+    # define YYLLOC_DEFAULT(Current, Rhs, N)                                \
+        do {                                                                \
+            if (N) {                                                        \
+                (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;      \
+                (Current).first_column = YYRHSLOC (Rhs, 1).first_column;    \
+                (Current).last_line    = YYRHSLOC (Rhs, N).last_line;       \
+                (Current).last_column  = YYRHSLOC (Rhs, N).last_column;     \
+                (Current).filename     = YYRHSLOC (Rhs, N).filename;        \
+            } else {                                                        \
+                (Current).first_line   = (Current).last_line   =            \
+                    YYRHSLOC (Rhs, 0).last_line;                            \
+                (Current).first_column = (Current).last_column =            \
+                    YYRHSLOC (Rhs, 0).last_column;                          \
+                (Current).filename     = NULL                               \
+            }                                                               \
+        } while (0)
+}
 
 %union {
     int pos;
@@ -19,7 +49,7 @@
 
 %left ';'
 %precedence ID
-%precedence '['
+%precedence '[' // Avoid ambiguity with 'ID'
 %precedence THEN 
 %precedence ELSE DO OF
 %right ASSIGN

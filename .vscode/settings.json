@@ -13,6 +13,7 @@
         "slp.h": "c",
         "util.h": "c",
         "errormsg.h": "c",
-        "symbol.h": "c"
+        "symbol.h": "c",
+        "tiger.tab.h": "c"
     }
 }

@@ -7,5 +7,5 @@ struct S_symbol_ {
     UT_hash_handle hh;
 };
 
-void update_table_str(S_symbol *head, char *id, long value);
-long lookup_str(S_symbol *head, char *id);
+void insert_sym(S_symbol s);
+S_symbol lookup_sym(char *id);

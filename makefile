@@ -28,7 +28,7 @@ run_ch2:ch2.out
 	bison -d -Wcounterexamples -o ./ch3/tiger.tab.c $<
 ./ch3/tiger.yy.c:./ch3/tiger.tab.h ./ch3/tiger.l
 	flex --outfile=$@ ./ch3/tiger.l
-ch3.out:./ch3/*.c ./ch3/*.h
+ch3.out:./ch3/tiger.yy.c ./ch3/tiger.tab.c ./ch3/tiger.tab.h ./ch3/*.c
 	gcc $(CFLAGS) ./ch3/*.c -o $@
 run_ch3:ch3.out
 	@echo "Please type in file names: "; \
