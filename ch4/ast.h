@@ -1,7 +1,7 @@
 #include "symbol.h"
 
 #pragma region AST Type define
-typedef int A_pos;
+typedef struct A_pos_ *A_pos;
 
 typedef struct A_var_ *A_var;
 typedef struct A_exp_ *A_exp;
@@ -33,13 +33,20 @@ typedef enum {
 #pragma endregion
 
 #pragma region AST struct define
+struct A_pos_ {
+    int first_line;
+    int first_column;
+    int last_line;
+    int last_column;
+    char *filename;
+};
 struct A_var_ {
     enum {
         A_simpleVar,
         A_fieldVar,
         A_subscriptVar
     } kind;
-    A_pos pos;
+    struct A_pos_ pos;
     union {
         S_symbol simple;
         struct {
@@ -71,7 +78,7 @@ struct A_exp_ {
         A_letExp,
         A_arrayExp
     } kind;
-    A_pos pos;
+    struct A_pos_ pos;
     union {
         A_var var;
         /* nil; - needs only the pos */
@@ -124,7 +131,7 @@ struct A_dec_ {
         A_varDec,
         A_typeDec
     } kind;
-    A_pos pos;
+    struct A_pos_ pos;
     union {
         A_fundecList function;
         /* escape may change after the initial declaration */
@@ -144,7 +151,7 @@ struct A_ty_ {
         A_recordTy,
         A_arrayTy
     } kind;
-    A_pos pos;
+    struct A_pos_ pos;
     union {
         S_symbol name;
         A_fieldList record;
@@ -154,7 +161,7 @@ struct A_ty_ {
 
 struct A_field_ {
     S_symbol name, typ;
-    A_pos pos;
+    struct A_pos_ pos;
     int escape;
 };
 struct A_fieldList_ {
@@ -166,7 +173,7 @@ struct A_expList_ {
     A_expList tail;
 };
 struct A_fundec_ {
-    A_pos pos;
+    struct A_pos_ pos;
     S_symbol name;
     A_fieldList params;
     S_symbol result;

@@ -4,13 +4,17 @@
 // Must be initialized as NULL
 S_symbol g_head = NULL;
 
-void insert_sym(S_symbol s)
+S_symbol S_Symbol(char *id)
 {
-    HASH_FIND_STR(g_head, s->id, s);
+    S_symbol s;
+    HASH_FIND_STR(g_head, id, s);
     if (s) {
-        return;
+        return s;
     }
+    s = checked_malloc(sizeof(struct S_symbol_));
+    s->id = id;
     HASH_ADD_KEYPTR(hh, g_head, s->id, strlen(s->id), s);
+    return s;
 }
 
 S_symbol lookup_sym(char *id)
