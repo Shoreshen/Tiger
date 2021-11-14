@@ -1,6 +1,7 @@
 #include "ast.h"
 #include "util.h"
 
+#pragma region AST-constructor
 A_var A_SimpleVar(A_pos pos, S_symbol sym)
 {
     A_var p = checked_malloc(sizeof(*p));
@@ -159,7 +160,7 @@ A_exp A_ArrayExp(A_pos pos, S_symbol typ, A_exp size, A_exp init)
     p->u.array.init = init;
     return p;
 }
-A_dec A_FunctionDec(A_pos pos, A_fundecList function)
+A_dec A_FunctionDec(A_pos pos, A_fundec function)
 {
     A_dec p = checked_malloc(sizeof(*p));
     p->kind = A_functionDec;
@@ -177,7 +178,7 @@ A_dec A_VarDec(A_pos pos, S_symbol var, S_symbol typ, A_exp init)
     p->u.var.init = init;
     return p;
 }
-A_dec A_TypeDec(A_pos pos, A_nametyList type)
+A_dec A_TypeDec(A_pos pos, A_namety type)
 {
     A_dec p = checked_malloc(sizeof(*p));
     p->kind = A_typeDec;
@@ -241,13 +242,6 @@ A_fundec A_Fundec(A_pos pos, S_symbol name, A_fieldList params, S_symbol result,
     p->body = body;
     return p;
 }
-A_fundecList A_FundecList(A_fundec head, A_fundecList tail)
-{
-    A_fundecList p = checked_malloc(sizeof(*p));
-    p->head = head;
-    p->tail = tail;
-    return p;
-}
 A_decList A_DecList(A_dec head, A_decList tail)
 {
     A_decList p = checked_malloc(sizeof(*p));
@@ -260,13 +254,6 @@ A_namety A_Namety(S_symbol name, A_ty ty)
     A_namety p = checked_malloc(sizeof(*p));
     p->name = name;
     p->ty = ty;
-    return p;
-}
-A_nametyList A_NametyList(A_namety head, A_nametyList tail)
-{
-    A_nametyList p = checked_malloc(sizeof(*p));
-    p->head = head;
-    p->tail = tail;
     return p;
 }
 A_efield A_Efield(S_symbol name, A_exp exp)
@@ -283,3 +270,81 @@ A_efieldList A_EfieldList(A_efield head, A_efieldList tail)
     p->tail = tail;
     return p;
 }
+#pragma endregion
+
+#pragma region AST print
+void indent(FILE *out, int d)
+{
+    int i;
+    for (i = 0; i < d; i++) {
+        fprintf(out, "\t");
+    }
+}
+void new_line(FILE *out, int d, char *pre_s, char *post_s)
+{
+    fprintf(out, "%s\n", pre_s);
+    indent(out, d);
+    fprintf(out, "%s", post_s);
+}
+void print_var(FILE *out, A_var var ,int d) {
+    indent(out, d);
+    switch (var->kind) {
+        case A_simpleVar:
+            fprintf(out, "simpleVar(%s)\n", var->u.simple->id);
+            break;
+        case A_fieldVar:
+            fprintf(out, "fieldVar(\n");
+            print_var(out, var->u.field.var, d + 1);
+            new_line(out, d + 1, ",", "");
+            fprintf(out, "%s", var->u.field.sym->id);
+            new_line(out, d, "", ")");
+            break;
+        case A_subscriptVar:
+            fprintf(out, "subscriptVar(\n");
+            print_var(out, var->u.subscript.var, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, var->u.subscript.exp, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        default:
+            assert(0);
+    }
+}
+void print_exp_list(FILE *out, A_expList list, int d) {
+    indent(out, d);
+    if (list) {
+        fprintf(out, "expList(\n");
+        print_exp(out, list->head, d + 1);
+        if (list->tail) {
+            fprintf(out, ",\n");
+            print_exp_list(out, list->tail, d + 1);
+        }
+        new_line(out, d, "", ")");
+    } else {
+        fprintf(out, "expList()");
+    }
+}
+void print_exp(FILE *out, A_exp exp ,int d)
+{
+    indent(out, d);
+    switch (exp->kind) {
+        case A_varExp:
+            fprintf(out, "varExp(\n");
+            print_var(out, exp->u.var, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_nilExp:
+            fprintf(out, "nilExp()");
+            break;
+        case A_intExp:
+            fprintf(out, "intExp(%d)", exp->u.intt);
+            break;
+        case A_stringExp:
+            fprintf(out, "stringExp(%s)", exp->u.string);
+            break;
+        case A_callExp:
+            fprintf(out, "callExp(%s\n", exp->u.call.func->id);
+
+    }
+}
+#pragma endregion

@@ -65,6 +65,11 @@
 %type <expList> exp_list exp_seq
 %type <efieldList> field_list
 %type <var> lvalue
+%type <dec> vardec
+%type <fundec> fundec
+%type <namety> tydec
+%type <fieldList> tyfields
+
 
 %token 
     NEQ LE GE ASSIGN ARRAY IF THEN ELSE 
@@ -87,43 +92,77 @@
 
 %%
 program: 
-    exp
+    exp {
+        ast_root = $1;
+    }
 ;
 
 decs:
-    dec
-    | decs dec
+    %empty {
+        $$ = NULL;
+    }
+    | decs dec {
+        $$ = A_DecList($1, $2);
+    }
 ;
 
 dec:
-    tydec
-    | vardec
-    | fundec
+    tydec {
+        $$ = A_TypeDec(&@$, $1);
+    }
+    | vardec {
+        $$ = $1;
+    }
+    | fundec {
+        $$ = A_FunctionDec(&@$, $1);
+    }
 ;
 
 tydec: 
-    TYPE ID '=' ty
+    TYPE ID '=' ty {
+        $$ = A_Namety(S_Symbol($2), $4);
+    }
 ;
 
 ty: 
-    ID
-    | '{' tyfields '}'
-    | ARRAY OF ID
+    ID {
+        $$ = A_NameTy(&@$, S_Symbol($1));
+    }
+    | '{' tyfields '}' {
+        $$ = A_RecordTy(&@$, $2);
+    }
+    | ARRAY OF ID {
+        $$ = A_ArrayTy(&@$, S_Symbol($3));
+    }
 
 tyfields:
-    %empty
-    | ID ':' ID
-    | tyfields ',' ID ':' ID
+    %empty {
+        $$ = NULL;
+    }
+    | ID ':' ID {
+        $$ = A_FieldList(A_Field(&@$, S_Symbol($1), S_Symbol($3)), NULL);
+    }
+    | tyfields ',' ID ':' ID {
+        $$ = A_FieldList(A_Field(&@$, S_Symbol($3), S_Symbol($5)), $1);
+    }
 ;
 
 vardec:
-    VAR ID ASSIGN exp
-    | VAR ID ':' ID ASSIGN exp
+    VAR ID ASSIGN exp {
+        $$ = A_VarDec(&@$, S_Symbol($2), NULL, $4);
+    }
+    | VAR ID ':' ID ASSIGN exp {
+        $$ = A_VarDec(&@$, S_Symbol($2), S_Symbol($4), $6);
+    }
 ;
 
 fundec:
-    FUNCTION ID '(' tyfields ')' '=' exp
-    | FUNCTION ID '(' tyfields ')' ':' ID '=' exp
+    FUNCTION ID '(' tyfields ')' '=' exp {
+        $$ = A_FunDec(&@$, S_Symbol($2), $4, NULL, $7);
+    }
+    | FUNCTION ID '(' tyfields ')' ':' ID '=' exp {
+        $$ = A_FunDec(&@$, S_Symbol($2), $4, S_Symbol($7), $9);
+    }
 ;
 
 exp: 
@@ -232,29 +271,50 @@ exp:
 ;
 
 exp_seq:
-    exp
-    | exp_seq ';' exp
+    exp {
+        $$ = A_ExpList($1, NULL);
+    }
+    | exp_seq ';' exp {
+        $$ = A_ExpList($3, $1);
+    }
 ;
 
 exp_list:
-    exp
-    | exp_list ',' exp
+    exp {
+        $$ = A_ExpList($1, NULL);
+    }
+    | exp_list ',' exp {
+        $$ = A_ExpList($3, $1);
+    }
 ;
 
 field_list:
-    ID '=' exp
-    | field_list ',' ID '=' exp
+    ID '=' exp {
+        $$ = A_EfieldList(A_Efield(S_Symbol($1), $3), NULL);
+    }
+    | field_list ',' ID '=' exp {
+        $$ = A_EfieldList(A_Efield(S_Symbol($3), $5), $1);
+    }
+;
 
 lvalue:
-    ID
+    ID {
+        $$ = A_SimpleVar(&@$, S_Symbol($1));
+    }
     /*
         When stack{ID . '['} due to precedence{line:21} do not reduce to `lvalue`
         Then stack{ID '[' exp ']' . tok} and tok is not `OF`.
         Because bision has to reduce from the stack top, so now it has no rule to reduce or no next state to jump
         Thus adding the following rule to handle this situation
     */
-    | ID '[' exp ']'
-    | lvalue '.' ID
-    | lvalue '[' exp ']' 
+    | ID '[' exp ']' {
+        $$ = A_SubscriptVar(&@$, A_SimpleVar(&@$, S_Symbol($1)), $3);
+    }
+    | lvalue '.' ID {
+        $$ = A_FieldVar(&@$, $1, S_Symbol($3));
+    }
+    | lvalue '[' exp ']' {
+        $$ = A_SubscriptVar(&@$, $1, $3);
+    }
 ;
 %%

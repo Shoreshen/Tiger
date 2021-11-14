@@ -38,7 +38,7 @@ program:
 ;
 
 decs:
-    dec
+    %empty
     | decs dec
 ;
 

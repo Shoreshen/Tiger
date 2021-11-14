@@ -4,6 +4,7 @@
 // Must be initialized as NULL
 S_symbol g_head = NULL;
 
+// All using the same table, so has to be different name
 S_symbol S_Symbol(char *id)
 {
     S_symbol s;
