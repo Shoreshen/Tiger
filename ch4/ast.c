@@ -132,6 +132,7 @@ A_exp A_ForExp(A_pos pos, S_symbol var, A_exp lo, A_exp hi, A_exp body)
     p->u.forr.lo = lo;
     p->u.forr.hi = hi;
     p->u.forr.body = body;
+    p->u.forr.escape = TRUE;
     return p;
 }
 A_exp A_BreakExp(A_pos pos)
@@ -176,6 +177,7 @@ A_dec A_VarDec(A_pos pos, S_symbol var, S_symbol typ, A_exp init)
     p->u.var.var = var;
     p->u.var.typ = typ;
     p->u.var.init = init;
+    p->u.var.escape = TRUE;
     return p;
 }
 A_dec A_TypeDec(A_pos pos, A_namety type)
@@ -216,6 +218,7 @@ A_field A_Field(A_pos pos, S_symbol name, S_symbol typ)
     memcpy(&p->pos, pos, sizeof(struct A_pos_));
     p->name = name;
     p->typ = typ;
+    p->escape = TRUE;
     return p;
 }
 A_fieldList A_FieldList(A_field head, A_fieldList tail)
@@ -286,17 +289,18 @@ void new_line(FILE *out, int d, char *pre_s, char *post_s)
     indent(out, d);
     fprintf(out, "%s", post_s);
 }
-void print_var(FILE *out, A_var var ,int d) {
+void print_var(FILE *out, A_var var ,int d) 
+{
     indent(out, d);
     switch (var->kind) {
         case A_simpleVar:
-            fprintf(out, "simpleVar(%s)\n", var->u.simple->id);
+            fprintf(out, "simpleVar(%s)\n", S_name(var->u.simple));
             break;
         case A_fieldVar:
             fprintf(out, "fieldVar(\n");
             print_var(out, var->u.field.var, d + 1);
             new_line(out, d + 1, ",", "");
-            fprintf(out, "%s", var->u.field.sym->id);
+            fprintf(out, "%s", S_name(var->u.field.sym));
             new_line(out, d, "", ")");
             break;
         case A_subscriptVar:
@@ -310,18 +314,199 @@ void print_var(FILE *out, A_var var ,int d) {
             assert(0);
     }
 }
-void print_exp_list(FILE *out, A_expList list, int d) {
+void print_oper(FILE *out, A_oper oper, int d) 
+{
+    indent(out, d);
+    switch (oper) {
+        case A_plusOp:
+            fprintf(out, "plusOp\n");
+            break;
+        case A_minusOp:
+            fprintf(out, "minusOp\n");
+            break;
+        case A_timesOp:
+            fprintf(out, "timesOp\n");
+            break;
+        case A_divideOp:
+            fprintf(out, "divideOp\n");
+            break;
+        case A_eqOp:
+            fprintf(out, "eqOp\n");
+            break;
+        case A_neqOp:
+            fprintf(out, "neqOp\n");
+            break;
+        case A_ltOp:
+            fprintf(out, "ltOp\n");
+            break;
+        case A_leOp:
+            fprintf(out, "leOp\n");
+            break;
+        case A_gtOp:
+            fprintf(out, "gtOp\n");
+            break;
+        case A_geOp:
+            fprintf(out, "geOp\n");
+            break;
+        default:
+            assert(0);
+    }
+}
+void print_expList(FILE *out, A_expList list, int d) 
+{
     indent(out, d);
     if (list) {
         fprintf(out, "expList(\n");
-        print_exp(out, list->head, d + 1);
-        if (list->tail) {
-            fprintf(out, ",\n");
-            print_exp_list(out, list->tail, d + 1);
+        while (list) {
+            print_exp(out, list->head, d + 1);
+            list = list->tail;
+            if (list) {
+                new_line(out, d + 1, ",", "");
+            }
         }
         new_line(out, d, "", ")");
     } else {
-        fprintf(out, "expList()");
+        fprintf(out, "expList()\n");
+    }
+}
+void print_efield(FILE *out, A_efield efield, int d) 
+{
+    indent(out, d);
+    if (efield) {
+        fprintf(out, "efield(%s,\n", S_name(efield->name));
+        print_exp(out, efield->exp, d + 1);
+        new_line(out, d, "", ")");
+    } else {
+        fprintf(out, "efield()\n");
+    }
+}
+void print_efieldList(FILE *out, A_efieldList list, int d) 
+{
+    indent(out, d);
+    if (list) {
+        fprintf(out, "efieldList(\n");
+        while (list) {
+            print_efield(out, list->head, d + 1);
+            list = list->tail;
+            if (list) {
+                new_line(out, d + 1, ",", "");
+            }
+        }
+        new_line(out, d, "", ")");
+    } else {
+        fprintf(out, "efieldList()\n");
+    }
+}
+void print_field(FILE *out, A_field field, int d) 
+{
+    indent(out, d);
+    fprintf(out, "field(%s", S_name(field->name));
+    new_line(out, d + 1, ",", "");
+    fprintf(out, "%s", S_name(field->typ));
+    new_line(out, d + 1, ",", "");
+    fprintf(out, "%s", field->escape ? "TRUE" : "FALSE");
+    new_line(out, d, "", ")");
+}
+void print_fieldList(FILE *out, A_fieldList list, int d) 
+{
+    indent(out, d);
+    if (list) {
+        fprintf(out, "fieldList(\n");
+        while (list) {
+            print_field(out, list->head, d + 1);
+            list = list->tail;
+            if (list) {
+                new_line(out, d + 1, ",", "");
+            }
+        }
+        new_line(out, d, "", ")");
+    } else {
+        fprintf(out, "fieldList()");
+    }
+}
+void print_fundec(FILE *out, A_fundec fundec, int d) 
+{
+    indent(out, d);
+    fprintf(out, "fundec(%s,\n", S_name(fundec->name));
+    print_fieldList(out, fundec->params, d + 1);
+    new_line(out, d + 1, ",", "");
+    if (fundec->result) {
+        new_line(out, d + 1, ",", "");
+        fprintf(out, "%s", S_name(fundec->result));
+    }
+    new_line(out, d + 1, ",", "");
+    print_exp(out, fundec->body, d + 1);
+    new_line(out, d, "", ")");
+}
+void print_ty(FILE *out, A_ty ty, int d) 
+{
+    indent(out, d);
+    switch (ty->kind) {
+        case A_nameTy:
+            fprintf(out, "nameTy(%s)\n", S_name(ty->u.name));
+            break;
+        case A_recordTy:
+            fprintf(out, "recordTy(\n");
+            print_fieldList(out, ty->u.record, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_arrayTy:
+            fprintf(out, "arrayTy(%s)", S_name(ty->u.array));
+            break;
+        default:
+            assert(0);
+    }
+}
+void print_namety(FILE *out, A_namety namety, int d) 
+{
+    indent(out, d);
+    fprintf(out, "namety(%s,\n", S_name(namety->name));
+    print_ty(out, namety->ty, d + 1);
+    new_line(out, d, "", ")");
+}
+void print_dec(FILE *out, A_dec dec, int d) 
+{
+    indent(out, d);
+    switch (dec->kind) {
+        case A_functionDec:
+            fprintf(out, "functionDec(\n");
+            print_fundec(out, dec->u.function, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_varDec:
+            fprintf(out, "varDec(%s\n", S_name(dec->u.var.var));
+            if (dec->u.var.typ) {
+                new_line(out, d + 1, ",", "");
+                fprintf(out, "%s\n", S_name(dec->u.var.typ));
+            }
+            print_exp(out, dec->u.var.init, d + 1);
+            new_line(out, d + 1, ",", "");
+            fprintf(out, "%s", dec->u.var.escape ? "TRUE" : "FALSE");
+            new_line(out, d, "", ")");
+            break;
+        case A_typeDec:
+            fprintf(out, "typeDec(\n");
+            print_namety(out, dec->u.type, d + 1);
+            new_line(out, d, "", ")");
+        default:
+            assert(0);
+    }
+}
+void print_decList(FILE *out, A_decList list, int d) 
+{
+    indent(out, d);
+    if (list) {
+        fprintf(out, "decList(\n");
+        while (list) {
+            print_dec(out, list->head, d + 1);
+            list = list->tail;
+            if (list) {
+                new_line(out, d + 1, ",", "");
+            }
+        }
+        new_line(out, d, "", ")");
+    } else {
+        fprintf(out, "decList()");
     }
 }
 void print_exp(FILE *out, A_exp exp ,int d)
@@ -343,8 +528,81 @@ void print_exp(FILE *out, A_exp exp ,int d)
             fprintf(out, "stringExp(%s)", exp->u.string);
             break;
         case A_callExp:
-            fprintf(out, "callExp(%s\n", exp->u.call.func->id);
-
+            fprintf(out, "callExp(%s\n", S_name(exp->u.call.func));
+            print_expList(out, exp->u.call.args, d + 1);
+            new_line(out, d, "", ")");
+        case A_opExp:
+            fprintf(out, "opExp(\n");
+            print_oper(out, exp->u.op.oper, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.op.left, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.op.right, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_recordExp:
+            fprintf(out, "recordExp(%s,\n", S_name(exp->u.record.typ));
+            print_efieldList(out, exp->u.record.fields, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_seqExp:
+            fprintf(out, "seqExp(\n");
+            print_expList(out, exp->u.seq, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_assignExp:
+            fprintf(out, "assignExp(\n");
+            print_var(out, exp->u.assign.var, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.assign.exp, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_ifExp:
+            fprintf(out, "iffExp(\n");
+            print_exp(out, exp->u.iff.test, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.iff.then, d + 1);
+            if (exp->u.iff.elsee) { // else exists
+                fprintf(out, ",\n");
+                print_exp(out, exp->u.iff.elsee, d + 1);
+            }
+            new_line(out, d, "", ")");
+            break;
+        case A_whileExp:
+            fprintf(out, "whileExp(\n");
+            print_exp(out, exp->u.whilee.test, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.whilee.body, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_forExp:
+            fprintf(out, "forExp(%s\n", S_name(exp->u.forr.var));
+            print_exp(out, exp->u.forr.lo, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.forr.hi, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.forr.body, d + 1);
+            fprintf(out, "%s\n", exp->u.forr.escape ? "TRUE" : "FALSE");
+            new_line(out, d, "", ")");
+        case A_breakExp:
+            fprintf(out, "breakExp()");
+            break;
+        case A_letExp:
+            fprintf(out, "letExp(\n");
+            print_decList(out, exp->u.let.decs, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.let.body, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        case A_arrayExp:
+            fprintf(out, "arrayExp(%s,\n", S_name(exp->u.array.typ));
+            print_exp(out, exp->u.array.size, d + 1);
+            fprintf(out, ",\n");
+            print_exp(out, exp->u.array.init, d + 1);
+            new_line(out, d, "", ")");
+            break;
+        default:
+            assert(0);
     }
 }
 #pragma endregion

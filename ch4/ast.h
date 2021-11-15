@@ -102,14 +102,19 @@ struct A_exp_ {
             A_exp exp;
         } assign;
         struct {
-            A_exp test, then, elsee;
+            A_exp test;
+            A_exp then;
+            A_exp elsee;
         } iff; /* elsee is optional */
         struct {
-            A_exp test, body;
+            A_exp test;
+            A_exp body;
         } whilee;
         struct {
             S_symbol var;
-            A_exp lo, hi, body;
+            A_exp lo;
+            A_exp hi;
+            A_exp body;
             int escape;
         } forr;
         /* breakk; - need only the pos */

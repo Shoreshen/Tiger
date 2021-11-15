@@ -9,3 +9,4 @@ struct S_symbol_ {
 
 S_symbol S_Symbol(char *id);
 S_symbol lookup_sym(char *id);
+char *S_name(S_symbol sym);

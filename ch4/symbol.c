@@ -18,6 +18,11 @@ S_symbol S_Symbol(char *id)
     return s;
 }
 
+char *S_name(S_symbol sym)
+{
+    return sym->id;
+}
+
 S_symbol lookup_sym(char *id)
 {
     S_symbol s = NULL;
