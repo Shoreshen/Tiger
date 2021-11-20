@@ -3,7 +3,6 @@
 %{
     #include "errormsg.h"
 	#include "util.h"
-	#include "ast.h" // For tiger.tab.h, it include definitions from ast.h
 	#include "tiger.tab.h"
 
 	struct string curr_str = {0, 0, NULL };

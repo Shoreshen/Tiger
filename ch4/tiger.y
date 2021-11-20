@@ -2,12 +2,13 @@
     #include <stdio.h>
     #include "util.h"
     #include "symbol.h"
-    #include "ast.h"
 
     void yyerror(char *s);
 %}
 
 %code requires {
+    #include "ast.h" // tiger.tab.h need it for type definition, thus should 
+                     // be included in tiger.tab.h
     extern char *yyfilename;
 
     typedef struct YYLTYPE {

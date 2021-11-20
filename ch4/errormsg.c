@@ -1,6 +1,5 @@
 #include "util.h"
 #include "errormsg.h"
-#include "ast.h"
 #include "tiger.tab.h"
 
 char *yyfilename;
