@@ -10,14 +10,6 @@ struct U_boolList_ {
     U_boolList tail;
 };
 
-typedef struct YYLTYPE {
-    int first_line;
-    int first_column;
-    int last_line;
-    int last_column;
-    char *filename;
-} YYLTYPE;
-
 extern bool EM_anyErrors;
 extern int EM_tokPos;
 extern int charPos;

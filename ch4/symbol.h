@@ -1,3 +1,4 @@
+#pragma once
 #include "../uthash/include/uthash.h"
 
 typedef struct S_symbol_ *S_symbol;

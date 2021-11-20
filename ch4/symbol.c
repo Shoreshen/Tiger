@@ -1,4 +1,5 @@
 #include "symbol.h"
+#include "util.h"
 
 // Hash table header for UT-HASH
 // Must be initialized as NULL

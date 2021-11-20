@@ -3,6 +3,7 @@
 %{
     #include "errormsg.h"
 	#include "util.h"
+	#include "ast.h" // For tiger.tab.h, it include definitions from ast.h
 	#include "tiger.tab.h"
 
 	struct string curr_str = {0, 0, NULL };
@@ -12,7 +13,7 @@
 		yylloc.first_line = yylloc.last_line = yylineno; \
 		yylloc.first_column = yylloc.last_column = yycolumn; \
 		yycolumn += yyleng; \
-		yylloc.filename = filename;
+		yylloc.filename = yyfilename;
 %}
 
 %x COMMENT
@@ -142,7 +143,7 @@
 	BEGIN(INITIAL);
 }
 <COMMENT><<EOF>> {
-	EM_error(EM_tokPos,"unclose comment\n");
+	EM_error("unclose comment\n");
 	// Built in function
 	// Terminate the scanner and return 0 to the caller of scaner
 	yyterminate();
@@ -164,7 +165,7 @@
 	// \ddd, x is num, indicating the acsii code for a charactor
 	int tmp = atoi(&yytext[1]);
 	if (tmp > 0xff) {
-		EM_error(EM_tokPos,"ascii code out of range"); 
+		EM_error("ascii code out of range"); 
 		yyterminate();
 	}
 	put_str(&curr_str, (char)tmp);
@@ -185,7 +186,7 @@
 	int i = 0;
 	while (yytext[i]) {
 		if (yytext[i] == '\n') {
-			EM_newline();
+			yycolumn = 1;
 		}
 		i++;
 	}
@@ -194,11 +195,11 @@
 	append_str(&curr_str, yytext);
 }
 <INSTRING>\n {
-	EM_error(EM_tokPos,"unclose string: newline appear in string"); 
+	EM_error("unclose string: newline appear in string"); 
 	yyterminate();
 }
 <INSTRING><<EOF>> {
-	EM_error(EM_tokPos,"unclose string: EOF appear in string"); 
+	EM_error("unclose string: EOF appear in string"); 
 	yyterminate();
 }
 
@@ -211,7 +212,7 @@
 
  /* unknown input */
 . {
-	EM_error(EM_tokPos,"illegal token");
+	EM_error("illegal token");
 }
 %%
 

@@ -36,5 +36,6 @@ extern int yylineno;
 extern int yyparse();
 // File pointer that will be parsed when calling `yyparse()`
 extern FILE *yyin;
+extern char* yyfilename;
 #pragma endregion
 

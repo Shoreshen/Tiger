@@ -1,6 +1,8 @@
 #include "ast.h"
 #include "util.h"
 
+A_exp ast_root;
+
 #pragma region AST-constructor
 A_var A_SimpleVar(A_pos pos, S_symbol sym)
 {

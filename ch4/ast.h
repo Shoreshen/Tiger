@@ -1,3 +1,4 @@
+#pragma once
 #include "symbol.h"
 #include <stdio.h>
 
@@ -250,4 +251,4 @@ A_efieldList A_EfieldList(A_efield head, A_efieldList tail);
 void print_exp(FILE *out, A_exp exp ,int d);
 #pragma endregion
 
-A_exp ast_root;
+extern A_exp ast_root;
