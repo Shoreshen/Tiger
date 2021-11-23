@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "util.h"
 #include "errormsg.h"
+#include "ast.h"
 
 int main(int argc, char **argv) {
     int tok;
@@ -13,7 +14,7 @@ int main(int argc, char **argv) {
     EM_reset(argv[1]);
 
     if(yyparse() == 0) {
-        printf("Parsing successful!\n");
+        print_exp(stdout, ast_root, 0);
     } else {
         printf("Parsing failed\n");
     }

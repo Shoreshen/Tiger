@@ -100,8 +100,8 @@ decs:
     %empty {
         $$ = NULL;
     }
-    | decs dec {
-        $$ = A_DecList($2, $1);
+    | dec decs {
+        $$ = A_DecList($1, $2);
     }
 ;
 
@@ -141,8 +141,8 @@ tyfields:
     | ID ':' ID {
         $$ = A_FieldList(A_Field((A_pos)&@$, S_Symbol($1), S_Symbol($3)), NULL);
     }
-    | tyfields ',' ID ':' ID {
-        $$ = A_FieldList(A_Field((A_pos)&@$, S_Symbol($3), S_Symbol($5)), $1);
+    | ID ':' ID ',' tyfields  {
+        $$ = A_FieldList(A_Field((A_pos)&@$, S_Symbol($1), S_Symbol($3)), $5);
     }
 ;
 
@@ -273,8 +273,8 @@ exp_seq:
     exp {
         $$ = A_ExpList($1, NULL);
     }
-    | exp_seq ';' exp {
-        $$ = A_ExpList($3, $1);
+    | exp ';' exp_seq {
+        $$ = A_ExpList($1, $3);
     }
 ;
 
@@ -282,8 +282,8 @@ exp_list:
     exp {
         $$ = A_ExpList($1, NULL);
     }
-    | exp_list ',' exp {
-        $$ = A_ExpList($3, $1);
+    | exp ',' exp_list {
+        $$ = A_ExpList($1, $3);
     }
 ;
 
@@ -291,8 +291,8 @@ field_list:
     ID '=' exp {
         $$ = A_EfieldList(A_Efield(S_Symbol($1), $3), NULL);
     }
-    | field_list ',' ID '=' exp {
-        $$ = A_EfieldList(A_Efield(S_Symbol($3), $5), $1);
+    | ID '=' exp ',' field_list {
+        $$ = A_EfieldList(A_Efield(S_Symbol($1), $3), $5);
     }
 ;
 

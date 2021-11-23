@@ -282,7 +282,7 @@ void indent(FILE *out, int d)
 {
     int i;
     for (i = 0; i < d; i++) {
-        fprintf(out, "\t");
+        fprintf(out, "    ");
     }
 }
 void new_line(FILE *out, int d, char *pre_s, char *post_s)
@@ -296,7 +296,7 @@ void print_var(FILE *out, A_var var ,int d)
     indent(out, d);
     switch (var->kind) {
         case A_simpleVar:
-            fprintf(out, "simpleVar(%s)\n", S_name(var->u.simple));
+            fprintf(out, "simpleVar(%s)", S_name(var->u.simple));
             break;
         case A_fieldVar:
             fprintf(out, "fieldVar(\n");
@@ -321,34 +321,34 @@ void print_oper(FILE *out, A_oper oper, int d)
     indent(out, d);
     switch (oper) {
         case A_plusOp:
-            fprintf(out, "plusOp\n");
+            fprintf(out, "plusOp");
             break;
         case A_minusOp:
-            fprintf(out, "minusOp\n");
+            fprintf(out, "minusOp");
             break;
         case A_timesOp:
-            fprintf(out, "timesOp\n");
+            fprintf(out, "timesOp");
             break;
         case A_divideOp:
-            fprintf(out, "divideOp\n");
+            fprintf(out, "divideOp");
             break;
         case A_eqOp:
-            fprintf(out, "eqOp\n");
+            fprintf(out, "eqOp");
             break;
         case A_neqOp:
-            fprintf(out, "neqOp\n");
+            fprintf(out, "neqOp");
             break;
         case A_ltOp:
-            fprintf(out, "ltOp\n");
+            fprintf(out, "ltOp");
             break;
         case A_leOp:
-            fprintf(out, "leOp\n");
+            fprintf(out, "leOp");
             break;
         case A_gtOp:
-            fprintf(out, "gtOp\n");
+            fprintf(out, "gtOp");
             break;
         case A_geOp:
-            fprintf(out, "geOp\n");
+            fprintf(out, "geOp");
             break;
         default:
             assert(0);
@@ -363,12 +363,24 @@ void print_expList(FILE *out, A_expList list, int d)
             print_exp(out, list->head, d + 1);
             list = list->tail;
             if (list) {
-                new_line(out, d + 1, ",", "");
+                fprintf(out, ",\n");
             }
         }
         new_line(out, d, "", ")");
     } else {
         fprintf(out, "expList()\n");
+    }
+}
+void print_expSeq(FILE *out, A_expList seq, int d) 
+{
+    if (seq) {
+        while (seq) {
+            print_exp(out, seq->head, d);
+            seq = seq->tail;
+            if (seq) {
+                fprintf(out, ",\n");
+            }
+        }
     }
 }
 void print_efield(FILE *out, A_efield efield, int d) 
@@ -391,7 +403,7 @@ void print_efieldList(FILE *out, A_efieldList list, int d)
             print_efield(out, list->head, d + 1);
             list = list->tail;
             if (list) {
-                new_line(out, d + 1, ",", "");
+                fprintf(out, ",\n");
             }
         }
         new_line(out, d, "", ")");
@@ -418,7 +430,7 @@ void print_fieldList(FILE *out, A_fieldList list, int d)
             print_field(out, list->head, d + 1);
             list = list->tail;
             if (list) {
-                new_line(out, d + 1, ",", "");
+                fprintf(out, ",\n");
             }
         }
         new_line(out, d, "", ")");
@@ -431,12 +443,11 @@ void print_fundec(FILE *out, A_fundec fundec, int d)
     indent(out, d);
     fprintf(out, "fundec(%s,\n", S_name(fundec->name));
     print_fieldList(out, fundec->params, d + 1);
-    new_line(out, d + 1, ",", "");
     if (fundec->result) {
         new_line(out, d + 1, ",", "");
         fprintf(out, "%s", S_name(fundec->result));
     }
-    new_line(out, d + 1, ",", "");
+    fprintf(out, ",\n");
     print_exp(out, fundec->body, d + 1);
     new_line(out, d, "", ")");
 }
@@ -476,9 +487,9 @@ void print_dec(FILE *out, A_dec dec, int d)
             new_line(out, d, "", ")");
             break;
         case A_varDec:
-            fprintf(out, "varDec(%s\n", S_name(dec->u.var.var));
+            fprintf(out, "varDec(%s,\n", S_name(dec->u.var.var));
             if (dec->u.var.typ) {
-                new_line(out, d + 1, ",", "");
+                indent(out, d + 1);
                 fprintf(out, "%s\n", S_name(dec->u.var.typ));
             }
             print_exp(out, dec->u.var.init, d + 1);
@@ -490,6 +501,7 @@ void print_dec(FILE *out, A_dec dec, int d)
             fprintf(out, "typeDec(\n");
             print_namety(out, dec->u.type, d + 1);
             new_line(out, d, "", ")");
+            break;
         default:
             assert(0);
     }
@@ -503,7 +515,7 @@ void print_decList(FILE *out, A_decList list, int d)
             print_dec(out, list->head, d + 1);
             list = list->tail;
             if (list) {
-                new_line(out, d + 1, ",", "");
+                fprintf(out, ",\n");
             }
         }
         new_line(out, d, "", ")");
@@ -533,6 +545,7 @@ void print_exp(FILE *out, A_exp exp ,int d)
             fprintf(out, "callExp(%s\n", S_name(exp->u.call.func));
             print_expList(out, exp->u.call.args, d + 1);
             new_line(out, d, "", ")");
+            break;
         case A_opExp:
             fprintf(out, "opExp(\n");
             print_oper(out, exp->u.op.oper, d + 1);
@@ -549,7 +562,7 @@ void print_exp(FILE *out, A_exp exp ,int d)
             break;
         case A_seqExp:
             fprintf(out, "seqExp(\n");
-            print_expList(out, exp->u.seq, d + 1);
+            print_expSeq(out, exp->u.seq, d + 1);
             new_line(out, d, "", ")");
             break;
         case A_assignExp:
@@ -586,6 +599,7 @@ void print_exp(FILE *out, A_exp exp ,int d)
             print_exp(out, exp->u.forr.body, d + 1);
             fprintf(out, "%s\n", exp->u.forr.escape ? "TRUE" : "FALSE");
             new_line(out, d, "", ")");
+            break;
         case A_breakExp:
             fprintf(out, "breakExp()");
             break;
