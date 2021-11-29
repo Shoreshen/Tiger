@@ -45,6 +45,17 @@ run_ch4:ch4.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
+# ch5 ===========================================================================================
+./ch5/tiger.tab.c ./ch5/tiger.tab.h: ./ch5/tiger.y
+	bison -d -Wcounterexamples -o ./ch5/tiger.tab.c $<
+./ch5/tiger.yy.c:./ch5/tiger.tab.h ./ch5/tiger.l
+	flex --outfile=$@ ./ch5/tiger.l
+ch5.out:./ch5/tiger.yy.c ./ch5/tiger.tab.c ./ch5/tiger.tab.h ./ch5/*.c
+	gcc $(CFLAGS) ./ch5/*.c -o $@
+run_ch5:ch5.out
+	@echo "Please type in file names: "; \
+	read file; \
+	./$< $$file
 # Clean =========================================================================================
 clean:
 	-rm *.out
