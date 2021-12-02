@@ -1,8 +1,9 @@
 #include "symbol.h"
-#include "util.h"
+#include "table.h"
 
-// Hash table header for UT-HASH
-// Must be initialized as NULL
+// The symbol table makes same ID(char *) as a pointer
+// pointing to the same `struct S_symbol_`
+// This avoid the string comparison in the later procedures
 S_symbol g_head = NULL;
 
 // All using the same table, so has to be different name
@@ -24,12 +25,27 @@ char *S_name(S_symbol sym)
     return sym->id;
 }
 
-S_symbol lookup_sym(char *id)
+void S_enter(E_stack stack, char *key, void* value) 
 {
-    S_symbol s = NULL;
-    HASH_FIND_STR(g_head, id, s);
-    if(!s) {
-        printf("Cannot find: ID %s may not defined\n", id);
+    TAB_enter(stack->table, key, value);
+}
+
+void* S_look(E_stack stack, char *key) 
+{
+    void* value = TAB_look(stack->table, key);
+    while (value == NULL && stack != NULL) {
+        stack = stack->next;
+        value = TAB_look(stack->table, key);
     }
-    return s;
+    return value;
+}
+
+void S_beginScope(E_stack stack) 
+{
+    E_stack_push(stack);
+}
+
+void S_endScope(E_stack stack) 
+{
+    E_stack_pop(stack);
 }

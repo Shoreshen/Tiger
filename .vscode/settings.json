@@ -15,6 +15,9 @@
         "errormsg.h": "c",
         "symbol.h": "c",
         "tiger.tab.h": "c",
-        "ostream": "c"
+        "ostream": "c",
+        "thread": "c",
+        "cassert": "c",
+        "numbers": "c"
     }
 }

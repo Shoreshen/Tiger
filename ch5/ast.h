@@ -48,10 +48,10 @@ struct A_var_ {
     } kind;
     struct A_pos_ pos;
     union {
-        char * simple;
+        S_symbol simple;
         struct {
             A_var var;
-            char * sym;
+            S_symbol sym;
         } field;
         struct {
             A_var var;
@@ -85,7 +85,7 @@ struct A_exp_ {
         int intt;
         char *string;
         struct {
-            char * func;
+            S_symbol func;
             A_expList args;
         } call;
         struct {
@@ -94,7 +94,7 @@ struct A_exp_ {
             A_exp right;
         } op;
         struct {
-            char * typ;
+            S_symbol typ;
             A_efieldList fields;
         } record;
         A_expList seq;
@@ -112,7 +112,7 @@ struct A_exp_ {
             A_exp body;
         } whilee;
         struct {
-            char * var;
+            S_symbol var;
             A_exp lo;
             A_exp hi;
             A_exp body;
@@ -124,7 +124,7 @@ struct A_exp_ {
             A_exp body;
         } let;
         struct {
-            char * typ;
+            S_symbol typ;
             A_exp size, init;
         } array;
     } u;
@@ -141,8 +141,8 @@ struct A_dec_ {
         A_fundec function;
         /* escape may change after the initial declaration */
         struct {
-            char * var;
-            char * typ;
+            S_symbol var;
+            S_symbol typ;
             A_exp init;
             int escape;
         } var;
@@ -158,15 +158,14 @@ struct A_ty_ {
     } kind;
     struct A_pos_ pos;
     union {
-        char * name;
+        S_symbol name;
         A_fieldList record;
-        char * array;
+        S_symbol array;
     } u;
 };
 
 struct A_field_ {
-    char *name;
-    char *typ;
+    S_symbol name, typ;
     struct A_pos_ pos;
     int escape;
 };
@@ -180,9 +179,9 @@ struct A_expList_ {
 };
 struct A_fundec_ {
     struct A_pos_ pos;
-    char * name;
+    S_symbol name;
     A_fieldList params;
-    char * result;
+    S_symbol result;
     A_exp body;
 };
 
@@ -191,11 +190,11 @@ struct A_decList_ {
     A_decList tail;
 };
 struct A_namety_ {
-    char * name;
+    S_symbol name;
     A_ty ty;
 };
 struct A_efield_ {
-    char * name;
+    S_symbol name;
     A_exp exp;
 };
 struct A_efieldList_ {
@@ -205,46 +204,46 @@ struct A_efieldList_ {
 #pragma endregion
 
 #pragma region AST function define
-A_var A_SimpleVar(A_pos pos, char * sym);
-A_var A_FieldVar(A_pos pos, A_var var, char * sym);
+A_var A_SimpleVar(A_pos pos, S_symbol sym);
+A_var A_FieldVar(A_pos pos, A_var var, S_symbol sym);
 A_var A_SubscriptVar(A_pos pos, A_var var, A_exp exp);
 
 A_exp A_VarExp(A_pos pos, A_var var);
 A_exp A_NilExp(A_pos pos);
 A_exp A_IntExp(A_pos pos, int i);
 A_exp A_StringExp(A_pos pos, char* s);
-A_exp A_CallExp(A_pos pos, char * func, A_expList args);
+A_exp A_CallExp(A_pos pos, S_symbol func, A_expList args);
 A_exp A_OpExp(A_pos pos, A_oper oper, A_exp left, A_exp right);
-A_exp A_RecordExp(A_pos pos, char * typ, A_efieldList fields);
+A_exp A_RecordExp(A_pos pos, S_symbol typ, A_efieldList fields);
 A_exp A_SeqExp(A_pos pos, A_expList seq);
 A_exp A_AssignExp(A_pos pos, A_var var, A_exp exp);
 A_exp A_IfExp(A_pos pos, A_exp test, A_exp then, A_exp elsee);
 A_exp A_WhileExp(A_pos pos, A_exp test, A_exp body);
-A_exp A_ForExp(A_pos pos, char * var, A_exp lo, A_exp hi, A_exp body);
+A_exp A_ForExp(A_pos pos, S_symbol var, A_exp lo, A_exp hi, A_exp body);
 A_exp A_BreakExp(A_pos pos);
 A_exp A_LetExp(A_pos pos, A_decList decs, A_exp body);
-A_exp A_ArrayExp(A_pos pos, char * typ, A_exp size, A_exp init);
+A_exp A_ArrayExp(A_pos pos, S_symbol typ, A_exp size, A_exp init);
 
 A_dec A_FunctionDec(A_pos pos, A_fundec function);
-A_dec A_VarDec(A_pos pos, char * var, char * typ, A_exp init);
+A_dec A_VarDec(A_pos pos, S_symbol var, S_symbol typ, A_exp init);
 A_dec A_TypeDec(A_pos pos, A_namety type);
 
-A_ty A_NameTy(A_pos pos, char * name);
+A_ty A_NameTy(A_pos pos, S_symbol name);
 A_ty A_RecordTy(A_pos pos, A_fieldList record);
-A_ty A_ArrayTy(A_pos pos, char * array);
+A_ty A_ArrayTy(A_pos pos, S_symbol array);
 
-A_field A_Field(A_pos pos, char * name, char * typ);
+A_field A_Field(A_pos pos, S_symbol name, S_symbol typ);
 A_fieldList A_FieldList(A_field head, A_fieldList tail);
 
 A_expList A_ExpList(A_exp head, A_expList tail);
 
-A_fundec A_Fundec(A_pos pos, char * name, A_fieldList params, char * result, A_exp body);
+A_fundec A_Fundec(A_pos pos, S_symbol name, A_fieldList params, S_symbol result, A_exp body);
 
 A_decList A_DecList(A_dec head, A_decList tail);
 
-A_namety A_Namety(char * name, A_ty ty);
+A_namety A_Namety(S_symbol name, A_ty ty);
 
-A_efield A_Efield(char * name, A_exp exp);
+A_efield A_Efield(S_symbol name, A_exp exp);
 A_efieldList A_EfieldList(A_efield head, A_efieldList tail);
 #pragma endregion
 

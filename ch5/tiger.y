@@ -1,6 +1,7 @@
 %{
     #include <stdio.h>
     #include "util.h"
+    #include "symbol.h"
 
     void yyerror(char *s);
 %}
@@ -118,19 +119,19 @@ dec:
 
 tydec: 
     TYPE ID '=' ty {
-        $$ = A_Namety($2, $4);
+        $$ = A_Namety(S_Symbol($2), $4);
     }
 ;
 
 ty: 
     ID {
-        $$ = A_NameTy((A_pos)&@$, $1);
+        $$ = A_NameTy((A_pos)&@$, S_Symbol($1));
     }
     | '{' tyfields '}' {
         $$ = A_RecordTy((A_pos)&@$, $2);
     }
     | ARRAY OF ID {
-        $$ = A_ArrayTy((A_pos)&@$, $3);
+        $$ = A_ArrayTy((A_pos)&@$, S_Symbol($3));
     }
 
 tyfields:
@@ -138,28 +139,28 @@ tyfields:
         $$ = NULL;
     }
     | ID ':' ID {
-        $$ = A_FieldList(A_Field((A_pos)&@$, $1, $3), NULL);
+        $$ = A_FieldList(A_Field((A_pos)&@$, S_Symbol($1), S_Symbol($3)), NULL);
     }
     | ID ':' ID ',' tyfields  {
-        $$ = A_FieldList(A_Field((A_pos)&@$, $1, $3), $5);
+        $$ = A_FieldList(A_Field((A_pos)&@$, S_Symbol($1), S_Symbol($3)), $5);
     }
 ;
 
 vardec:
     VAR ID ASSIGN exp {
-        $$ = A_VarDec((A_pos)&@$, $2, NULL, $4);
+        $$ = A_VarDec((A_pos)&@$, S_Symbol($2), NULL, $4);
     }
     | VAR ID ':' ID ASSIGN exp {
-        $$ = A_VarDec((A_pos)&@$, $2, $4, $6);
+        $$ = A_VarDec((A_pos)&@$, S_Symbol($2), S_Symbol($4), $6);
     }
 ;
 
 fundec:
     FUNCTION ID '(' tyfields ')' '=' exp {
-        $$ = A_Fundec((A_pos)&@$, $2, $4, NULL, $7);
+        $$ = A_Fundec((A_pos)&@$, S_Symbol($2), $4, NULL, $7);
     }
     | FUNCTION ID '(' tyfields ')' ':' ID '=' exp {
-        $$ = A_Fundec((A_pos)&@$, $2, $4, $7, $9);
+        $$ = A_Fundec((A_pos)&@$, S_Symbol($2), $4, S_Symbol($7), $9);
     }
 ;
 
@@ -186,10 +187,10 @@ exp:
         $$ = A_OpExp((A_pos)&@$, A_minusOp, A_IntExp((A_pos)&@$, 0), $2);
     }
     | ID '(' exp_list ')' {
-        $$ = A_CallExp((A_pos)&@$, $1, $3);
+        $$ = A_CallExp((A_pos)&@$, S_Symbol($1), $3);
     }
     | ID '(' ')' {
-        $$ = A_CallExp((A_pos)&@$, $1, NULL);
+        $$ = A_CallExp((A_pos)&@$, S_Symbol($1), NULL);
     }
     | exp '+' exp {
         $$ = A_OpExp((A_pos)&@$, A_plusOp, $1, $3);
@@ -228,13 +229,13 @@ exp:
         $$ = A_IfExp((A_pos)&@$, $1, A_IntExp((A_pos)&@$, 1), $3);
     }
     | ID '{' field_list '}' {
-        $$ = A_RecordExp((A_pos)&@$, $1, $3);
+        $$ = A_RecordExp((A_pos)&@$, S_Symbol($1), $3);
     }
     | ID '{' '}' {
-        $$ = A_RecordExp((A_pos)&@$, $1, NULL);
+        $$ = A_RecordExp((A_pos)&@$, S_Symbol($1), NULL);
     }
     | ID '[' exp ']' OF exp {
-        $$ = A_ArrayExp((A_pos)&@$, $1, $3, $6);
+        $$ = A_ArrayExp((A_pos)&@$, S_Symbol($1), $3, $6);
     }
     | lvalue ASSIGN exp {
         $$ = A_AssignExp((A_pos)&@$, $1, $3);
@@ -249,7 +250,7 @@ exp:
         $$ = A_WhileExp((A_pos)&@$, $2, $4);
     }
     | FOR ID ASSIGN exp TO exp DO exp {
-        $$ = A_ForExp((A_pos)&@$, $2, $4, $6, $8);
+        $$ = A_ForExp((A_pos)&@$, S_Symbol($2), $4, $6, $8);
     }
     | BREAK {
         $$ = A_BreakExp((A_pos)&@$);
@@ -288,16 +289,16 @@ exp_list:
 
 field_list:
     ID '=' exp {
-        $$ = A_EfieldList(A_Efield($1, $3), NULL);
+        $$ = A_EfieldList(A_Efield(S_Symbol($1), $3), NULL);
     }
     | ID '=' exp ',' field_list {
-        $$ = A_EfieldList(A_Efield($1, $3), $5);
+        $$ = A_EfieldList(A_Efield(S_Symbol($1), $3), $5);
     }
 ;
 
 lvalue:
     ID {
-        $$ = A_SimpleVar((A_pos)&@$, $1);
+        $$ = A_SimpleVar((A_pos)&@$, S_Symbol($1));
     }
     /*
         When stack{ID . '['} due to precedence{line:21} do not reduce to `lvalue`
@@ -306,10 +307,10 @@ lvalue:
         Thus adding the following rule to handle this situation
     */
     | ID '[' exp ']' {
-        $$ = A_SubscriptVar((A_pos)&@$, A_SimpleVar((A_pos)&@$, $1), $3);
+        $$ = A_SubscriptVar((A_pos)&@$, A_SimpleVar((A_pos)&@$, S_Symbol($1)), $3);
     }
     | lvalue '.' ID {
-        $$ = A_FieldVar((A_pos)&@$, $1, $3);
+        $$ = A_FieldVar((A_pos)&@$, $1, S_Symbol($3));
     }
     | lvalue '[' exp ']' {
         $$ = A_SubscriptVar((A_pos)&@$, $1, $3);

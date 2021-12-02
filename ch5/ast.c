@@ -4,7 +4,7 @@
 A_exp ast_root;
 
 #pragma region AST-constructor
-A_var A_SimpleVar(A_pos pos, char * sym)
+A_var A_SimpleVar(A_pos pos, S_symbol sym)
 {
     A_var p = checked_malloc(sizeof(*p));
     p->kind = A_simpleVar;
@@ -12,7 +12,7 @@ A_var A_SimpleVar(A_pos pos, char * sym)
     p->u.simple = sym;
     return p;
 }
-A_var A_FieldVar(A_pos pos, A_var var, char * sym)
+A_var A_FieldVar(A_pos pos, A_var var, S_symbol sym)
 {
     A_var p = checked_malloc(sizeof(*p));
     p->kind = A_fieldVar;
@@ -61,7 +61,7 @@ A_exp A_StringExp(A_pos pos, char* s)
     p->u.string = s;
     return p;
 }
-A_exp A_CallExp(A_pos pos, char * func, A_expList args)
+A_exp A_CallExp(A_pos pos, S_symbol func, A_expList args)
 {
     A_exp p = checked_malloc(sizeof(*p));
     p->kind = A_callExp;
@@ -80,7 +80,7 @@ A_exp A_OpExp(A_pos pos, A_oper oper, A_exp left, A_exp right)
     p->u.op.right = right;
     return p;
 }
-A_exp A_RecordExp(A_pos pos, char * typ, A_efieldList fields)
+A_exp A_RecordExp(A_pos pos, S_symbol typ, A_efieldList fields)
 {
     A_exp p = checked_malloc(sizeof(*p));
     p->kind = A_recordExp;
@@ -125,7 +125,7 @@ A_exp A_WhileExp(A_pos pos, A_exp test, A_exp body)
     p->u.whilee.body = body;
     return p;
 }
-A_exp A_ForExp(A_pos pos, char * var, A_exp lo, A_exp hi, A_exp body)
+A_exp A_ForExp(A_pos pos, S_symbol var, A_exp lo, A_exp hi, A_exp body)
 {
     A_exp p = checked_malloc(sizeof(*p));
     p->kind = A_forExp;
@@ -153,7 +153,7 @@ A_exp A_LetExp(A_pos pos, A_decList decs, A_exp body)
     p->u.let.body = body;
     return p;
 }
-A_exp A_ArrayExp(A_pos pos, char * typ, A_exp size, A_exp init)
+A_exp A_ArrayExp(A_pos pos, S_symbol typ, A_exp size, A_exp init)
 {
     A_exp p = checked_malloc(sizeof(*p));
     p->kind = A_arrayExp;
@@ -171,7 +171,7 @@ A_dec A_FunctionDec(A_pos pos, A_fundec function)
     p->u.function = function;
     return p;
 }
-A_dec A_VarDec(A_pos pos, char * var, char * typ, A_exp init)
+A_dec A_VarDec(A_pos pos, S_symbol var, S_symbol typ, A_exp init)
 {
     A_dec p = checked_malloc(sizeof(*p));
     p->kind = A_varDec;
@@ -190,7 +190,7 @@ A_dec A_TypeDec(A_pos pos, A_namety type)
     p->u.type = type;
     return p;
 }
-A_ty A_NameTy(A_pos pos, char * name)
+A_ty A_NameTy(A_pos pos, S_symbol name)
 {
     A_ty p = checked_malloc(sizeof(*p));
     p->kind = A_nameTy;
@@ -206,7 +206,7 @@ A_ty A_RecordTy(A_pos pos, A_fieldList record)
     p->u.record = record;
     return p;
 }
-A_ty A_ArrayTy(A_pos pos, char * array)
+A_ty A_ArrayTy(A_pos pos, S_symbol array)
 {
     A_ty p = checked_malloc(sizeof(*p));
     p->kind = A_arrayTy;
@@ -214,7 +214,7 @@ A_ty A_ArrayTy(A_pos pos, char * array)
     p->u.array = array;
     return p;
 }
-A_field A_Field(A_pos pos, char * name, char * typ)
+A_field A_Field(A_pos pos, S_symbol name, S_symbol typ)
 {
     A_field p = checked_malloc(sizeof(*p));
     memcpy(&p->pos, pos, sizeof(struct A_pos_));
@@ -237,7 +237,7 @@ A_expList A_ExpList(A_exp head, A_expList tail)
     p->tail = tail;
     return p;
 }
-A_fundec A_Fundec(A_pos pos, char * name, A_fieldList params, char * result, A_exp body)
+A_fundec A_Fundec(A_pos pos, S_symbol name, A_fieldList params, S_symbol result, A_exp body)
 {
     A_fundec p = checked_malloc(sizeof(*p));
     memcpy(&p->pos, pos, sizeof(struct A_pos_));
@@ -254,14 +254,14 @@ A_decList A_DecList(A_dec head, A_decList tail)
     p->tail = tail;
     return p;
 }
-A_namety A_Namety(char * name, A_ty ty)
+A_namety A_Namety(S_symbol name, A_ty ty)
 {
     A_namety p = checked_malloc(sizeof(*p));
     p->name = name;
     p->ty = ty;
     return p;
 }
-A_efield A_Efield(char * name, A_exp exp)
+A_efield A_Efield(S_symbol name, A_exp exp)
 {
     A_efield p = checked_malloc(sizeof(*p));
     p->name = name;
@@ -296,13 +296,13 @@ void print_var(FILE *out, A_var var ,int d)
     indent(out, d);
     switch (var->kind) {
         case A_simpleVar:
-            fprintf(out, "simpleVar(%s)", var->u.simple);
+            fprintf(out, "simpleVar(%s)", S_name(var->u.simple));
             break;
         case A_fieldVar:
             fprintf(out, "fieldVar(\n");
             print_var(out, var->u.field.var, d + 1);
             new_line(out, d + 1, ",", "");
-            fprintf(out, "%s", var->u.field.sym);
+            fprintf(out, "%s", S_name(var->u.field.sym));
             new_line(out, d, "", ")");
             break;
         case A_subscriptVar:
@@ -387,7 +387,7 @@ void print_efield(FILE *out, A_efield efield, int d)
 {
     indent(out, d);
     if (efield) {
-        fprintf(out, "efield(%s,\n", efield->name);
+        fprintf(out, "efield(%s,\n", S_name(efield->name));
         print_exp(out, efield->exp, d + 1);
         new_line(out, d, "", ")");
     } else {
@@ -414,9 +414,9 @@ void print_efieldList(FILE *out, A_efieldList list, int d)
 void print_field(FILE *out, A_field field, int d) 
 {
     indent(out, d);
-    fprintf(out, "field(%s", field->name);
+    fprintf(out, "field(%s", S_name(field->name));
     new_line(out, d + 1, ",", "");
-    fprintf(out, "%s", field->typ);
+    fprintf(out, "%s", S_name(field->typ));
     new_line(out, d + 1, ",", "");
     fprintf(out, "%s", field->escape ? "TRUE" : "FALSE");
     new_line(out, d, "", ")");
@@ -441,11 +441,11 @@ void print_fieldList(FILE *out, A_fieldList list, int d)
 void print_fundec(FILE *out, A_fundec fundec, int d) 
 {
     indent(out, d);
-    fprintf(out, "fundec(%s,\n", fundec->name);
+    fprintf(out, "fundec(%s,\n", S_name(fundec->name));
     print_fieldList(out, fundec->params, d + 1);
     if (fundec->result) {
         new_line(out, d + 1, ",", "");
-        fprintf(out, "%s", fundec->result);
+        fprintf(out, "%s", S_name(fundec->result));
     }
     fprintf(out, ",\n");
     print_exp(out, fundec->body, d + 1);
@@ -456,7 +456,7 @@ void print_ty(FILE *out, A_ty ty, int d)
     indent(out, d);
     switch (ty->kind) {
         case A_nameTy:
-            fprintf(out, "nameTy(%s)\n", ty->u.name);
+            fprintf(out, "nameTy(%s)\n", S_name(ty->u.name));
             break;
         case A_recordTy:
             fprintf(out, "recordTy(\n");
@@ -464,7 +464,7 @@ void print_ty(FILE *out, A_ty ty, int d)
             new_line(out, d, "", ")");
             break;
         case A_arrayTy:
-            fprintf(out, "arrayTy(%s)", ty->u.array);
+            fprintf(out, "arrayTy(%s)", S_name(ty->u.array));
             break;
         default:
             assert(0);
@@ -473,7 +473,7 @@ void print_ty(FILE *out, A_ty ty, int d)
 void print_namety(FILE *out, A_namety namety, int d) 
 {
     indent(out, d);
-    fprintf(out, "namety(%s,\n", namety->name);
+    fprintf(out, "namety(%s,\n", S_name(namety->name));
     print_ty(out, namety->ty, d + 1);
     new_line(out, d, "", ")");
 }
@@ -487,10 +487,10 @@ void print_dec(FILE *out, A_dec dec, int d)
             new_line(out, d, "", ")");
             break;
         case A_varDec:
-            fprintf(out, "varDec(%s,\n", dec->u.var.var);
+            fprintf(out, "varDec(%s,\n", S_name(dec->u.var.var));
             if (dec->u.var.typ) {
                 indent(out, d + 1);
-                fprintf(out, "%s\n", dec->u.var.typ);
+                fprintf(out, "%s\n", S_name(dec->u.var.typ));
             }
             print_exp(out, dec->u.var.init, d + 1);
             new_line(out, d + 1, ",", "");
@@ -542,7 +542,7 @@ void print_exp(FILE *out, A_exp exp ,int d)
             fprintf(out, "stringExp(%s)", exp->u.string);
             break;
         case A_callExp:
-            fprintf(out, "callExp(%s\n", exp->u.call.func);
+            fprintf(out, "callExp(%s\n", S_name(exp->u.call.func));
             print_expList(out, exp->u.call.args, d + 1);
             new_line(out, d, "", ")");
             break;
@@ -556,7 +556,7 @@ void print_exp(FILE *out, A_exp exp ,int d)
             new_line(out, d, "", ")");
             break;
         case A_recordExp:
-            fprintf(out, "recordExp(%s,\n", exp->u.record.typ);
+            fprintf(out, "recordExp(%s,\n", S_name(exp->u.record.typ));
             print_efieldList(out, exp->u.record.fields, d + 1);
             new_line(out, d, "", ")");
             break;
@@ -591,7 +591,7 @@ void print_exp(FILE *out, A_exp exp ,int d)
             new_line(out, d, "", ")");
             break;
         case A_forExp:
-            fprintf(out, "forExp(%s\n", exp->u.forr.var);
+            fprintf(out, "forExp(%s\n", S_name(exp->u.forr.var));
             print_exp(out, exp->u.forr.lo, d + 1);
             fprintf(out, ",\n");
             print_exp(out, exp->u.forr.hi, d + 1);
@@ -611,7 +611,7 @@ void print_exp(FILE *out, A_exp exp ,int d)
             new_line(out, d, "", ")");
             break;
         case A_arrayExp:
-            fprintf(out, "arrayExp(%s,\n", exp->u.array.typ);
+            fprintf(out, "arrayExp(%s,\n", S_name(exp->u.array.typ));
             print_exp(out, exp->u.array.size, d + 1);
             fprintf(out, ",\n");
             print_exp(out, exp->u.array.init, d + 1);
