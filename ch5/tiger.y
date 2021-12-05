@@ -223,10 +223,10 @@ exp:
         $$ = A_OpExp((A_pos)&@$, A_leOp, $1, $3);
     }
     | exp '&' exp {
-        $$ = A_IfExp((A_pos)&@$, $1, $3, A_IntExp((A_pos)&@$, 0));
+        $$ = A_OpExp((A_pos)&@$, A_andOp, $1, $3);
     }
     | exp '|' exp {
-        $$ = A_IfExp((A_pos)&@$, $1, A_IntExp((A_pos)&@$, 1), $3);
+        $$ = A_OpExp((A_pos)&@$, A_orOp, $1, $3);
     }
     | ID '{' field_list '}' {
         $$ = A_RecordExp((A_pos)&@$, S_Symbol($1), $3);

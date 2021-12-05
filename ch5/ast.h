@@ -28,7 +28,9 @@ typedef enum {
     A_ltOp,
     A_leOp,
     A_gtOp,
-    A_geOp
+    A_geOp,
+    A_andOp,
+    A_orOp
 } A_oper;
 #pragma endregion
 

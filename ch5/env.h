@@ -30,3 +30,5 @@ void E_stack_push(E_stack stack);
 void E_stack_pop(E_stack stack);
 E_stack E_base_venv(void);
 E_stack E_base_tenv(void);
+E_enventry E_VarEntry(Ty_ty ty);
+E_enventry E_FunEntry(Ty_tyList formals, Ty_ty result);

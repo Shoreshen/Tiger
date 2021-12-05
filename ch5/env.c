@@ -44,3 +44,18 @@ E_stack E_base_tenv(void)
     stack->next = NULL;
     return stack;
 }
+
+E_enventry E_VarEntry(Ty_ty ty) {
+    E_enventry e = (E_enventry) checked_malloc(sizeof(struct E_enventry_));
+    e->kind = E_varEntry;
+    e->u.var.ty = ty;
+    return e;
+}
+
+E_enventry E_FunEntry(Ty_tyList formals, Ty_ty result) {
+    E_enventry e = (E_enventry) checked_malloc(sizeof(struct E_enventry_));
+    e->kind = E_funEntry;
+    e->u.fun.formals = formals;
+    e->u.fun.result = result;
+    return e;
+}
