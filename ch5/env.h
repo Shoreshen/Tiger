@@ -1,6 +1,5 @@
 #pragma once
-#include "table.h"
-#include "types.h"
+#include "util.h"
 
 typedef struct E_stack_* E_stack;
 typedef struct E_enventry_ *E_enventry;

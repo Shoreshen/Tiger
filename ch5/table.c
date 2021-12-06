@@ -9,8 +9,9 @@ void TAB_enter(TAB_table table, void* key, void* value)
         t->value = value;
         return;
     }
-    t = checked_malloc(sizeof(struct TAB_table_));
+    t = checked_malloc(sizeof(*t));
     t->key = key;
+    t->value = value;
     HASH_ADD_PTR(table, key, t);
     return;
 }
@@ -24,7 +25,7 @@ void TAB_delete(TAB_table table, void* key)
     }
     return;
 }
-TAB_table TAB_lookup(TAB_table table, void* key)
+TAB_table TAB_look(TAB_table table, void* key)
 {
     TAB_table t = NULL;
     HASH_FIND_PTR(table, key, t);

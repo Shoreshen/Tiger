@@ -1,5 +1,5 @@
 #include "types.h"
-#include "util.h"
+#include "symbol.h"
 
 Ty_ty Ty_Nil(void)
 {

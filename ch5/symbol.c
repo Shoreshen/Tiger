@@ -1,5 +1,6 @@
 #include "symbol.h"
 #include "table.h"
+#include "env.h"
 
 // The symbol table makes same ID(char *) as a pointer
 // pointing to the same `struct S_symbol_`
@@ -25,19 +26,19 @@ char *S_name(S_symbol sym)
     return sym->id;
 }
 
-void S_enter(E_stack stack, char *key, void* value) 
+void S_enter(E_stack stack, S_symbol key, void* value) 
 {
     TAB_enter(stack->table, key, value);
 }
 
-void* S_look(E_stack stack, char *key) 
+void* S_look(E_stack stack, S_symbol key) 
 {
-    void* value = TAB_look(stack->table, key);
-    while (value == NULL && stack != NULL) {
+    TAB_table tab = TAB_look(stack->table, key);
+    while (tab == NULL && stack != NULL) {
         stack = stack->next;
-        value = TAB_look(stack->table, key);
+        tab = TAB_look(stack->table, key);
     }
-    return value;
+    return tab->value;
 }
 
 void S_beginScope(E_stack stack) 

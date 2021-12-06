@@ -1,5 +1,6 @@
 #include "env.h"
-#include "util.h"
+#include "table.h"
+#include "types.h"
 
 void E_stack_push(E_stack stack) {
     E_stack tmp = (E_stack) checked_malloc(sizeof(struct E_stack_));

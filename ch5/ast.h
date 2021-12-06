@@ -1,10 +1,7 @@
 #pragma once
-#include "symbol.h"
-#include <stdio.h>
+#include "util.h"
 
 #pragma region AST Type define
-typedef struct A_pos_ *A_pos;
-
 typedef struct A_var_ *A_var;
 typedef struct A_exp_ *A_exp;
 typedef struct A_dec_ *A_dec;

@@ -142,7 +142,7 @@
 	BEGIN(INITIAL);
 }
 <COMMENT><<EOF>> {
-	EM_error("unclose comment\n");
+	EM_error((A_pos)&yylloc, "unclose comment\n");
 	// Built in function
 	// Terminate the scanner and return 0 to the caller of scaner
 	yyterminate();
@@ -164,7 +164,7 @@
 	// \ddd, x is num, indicating the acsii code for a charactor
 	int tmp = atoi(&yytext[1]);
 	if (tmp > 0xff) {
-		EM_error("ascii code out of range"); 
+		EM_error((A_pos)&yylloc, "ascii code out of range"); 
 		yyterminate();
 	}
 	put_str(&curr_str, (char)tmp);
@@ -194,11 +194,11 @@
 	append_str(&curr_str, yytext);
 }
 <INSTRING>\n {
-	EM_error("unclose string: newline appear in string"); 
+	EM_error((A_pos)&yylloc, "unclose string: newline appear in string"); 
 	yyterminate();
 }
 <INSTRING><<EOF>> {
-	EM_error("unclose string: EOF appear in string"); 
+	EM_error((A_pos)&yylloc, "unclose string: EOF appear in string"); 
 	yyterminate();
 }
 
@@ -211,7 +211,7 @@
 
  /* unknown input */
 . {
-	EM_error("illegal token");
+	EM_error((A_pos)&yylloc, "illegal token");
 }
 %%
 

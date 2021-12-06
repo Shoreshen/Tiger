@@ -18,6 +18,17 @@
         "ostream": "c",
         "thread": "c",
         "cassert": "c",
-        "numbers": "c"
+        "numbers": "c",
+        "env.h": "c",
+        "types.h": "c",
+        "uthash.h": "c",
+        "table.h": "c",
+        "istream": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c"
     }
 }

@@ -1,4 +1,3 @@
-#include "util.h"
 #include "errormsg.h"
 #include "tiger.tab.h"
 
@@ -7,16 +6,12 @@ char *yyfilename;
 typedef struct intList {int i; struct intList *rest;} *IntList;
 
 bool anyErrors          = FALSE;
-static int lineNum      = 1;
-int EM_tokPos           = 0;
-static IntList linePos  = NULL;
-int charPos             = 1;
 
 void yyerror(char *s) {
-  EM_error("%s", s);
+  EM_error((A_pos)&yylloc, "%s", s);
 }
 
-void EM_error(char *message,...)
+void EM_error(A_pos pos, char *message,...)
 {
     va_list ap;
     anyErrors       = TRUE;

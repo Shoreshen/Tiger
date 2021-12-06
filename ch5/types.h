@@ -1,10 +1,5 @@
 #pragma once
-#include "symbol.h"
-
-typedef struct Ty_ty_ *Ty_ty;
-typedef struct Ty_field_ *Ty_field;
-typedef struct Ty_tyList_ *Ty_tyList;
-typedef struct Ty_fieldList_ *Ty_fieldList;
+#include "util.h"
 
 struct Ty_tyList_ {
     Ty_ty head;

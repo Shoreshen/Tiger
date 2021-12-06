@@ -1,5 +1,5 @@
 #include "ast.h"
-#include "util.h"
+#include "symbol.h"
 
 A_exp ast_root;
 
