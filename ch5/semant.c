@@ -4,6 +4,7 @@
 #include "types.h"
 #include "util.h"
 #include "errormsg.h"
+#include "top_sort.h"
 
 typedef struct expty_ *expty;
 struct expty_ {
@@ -13,7 +14,8 @@ struct expty_ {
 
 expty transExp(E_stack venv, E_stack tenv, A_exp e);
 expty transVar(E_stack venv, E_stack tenv, A_var v);
-void transDec(E_stack venv, E_stack tenv, A_dec d);
+void transDec(E_stack venv, E_stack tenv, A_decList d);
+Ty_ty transTy (E_stack tenv, A_ty t);
 
 int inloop = 0;
 
@@ -255,7 +257,7 @@ expty transExp(E_stack venv, E_stack tenv, A_exp e)
                 return expTy(NULL, Ty_Void());
             }
             S_beginScope(venv);
-            S_enter(venv, e->u.forr.var, E_VarEntry(Ty_Int()));
+            S_enter(venv, e->u.forr.var, Ty_Int());
             inloop++;
             expty body = transExp(venv, tenv, e->u.forr.body);
             inloop--;
@@ -276,10 +278,7 @@ expty transExp(E_stack venv, E_stack tenv, A_exp e)
             expty body;
             S_beginScope(venv);
             S_beginScope(tenv);
-            while (decs) {
-                transDec(venv, tenv, decs->head);
-                decs = decs->tail;
-            }
+            transDec(venv, tenv, decs);
             body = transExp(venv, tenv, e->u.let.body);
             S_endScope(tenv);
             S_endScope(venv);
@@ -311,14 +310,169 @@ expty transExp(E_stack venv, E_stack tenv, A_exp e)
     }
 }
 
-void transDec(E_stack venv, E_stack tenv, A_dec d) 
+void transDec(E_stack venv, E_stack tenv, A_decList d) 
 {
+    A_dec dec;
+    A_decList decs = d;
+    TS_node top_table = NULL;
+    while (decs) {
+        dec = decs->head;
+        switch (dec->kind) {
+            case A_varDec: {
+                Ty_ty dec_ty = NULL;
+                if (dec->u.var.typ) {
+                    dec_ty = S_look(tenv, dec->u.var.typ);
+                    if (!dec_ty) {
+                        EM_error(&dec->pos, "undefined type %s", S_name(dec->u.var.typ));
+                        break;
+                    }
+                }
+                expty init = transExp(venv, tenv, dec->u.var.init);
+                if (dec_ty) {
+                    if (!actual_eq(init->ty, dec_ty)) {
+                        EM_error(&dec->pos, "initialize type does not match with given type");
+                        break;
+                    }
+                } else {
+                    if (init->ty->kind == Ty_nil) {
+                        EM_error(&dec->pos, "variable declare: illegal nil type: nil must be assign to a explictly record type");
+                        break;
+                    }
+                }
+                S_enter(venv, dec->u.var.var, init->ty);
+                break;
+            }
+            case A_typeDec: {
+                // Check redefinition
+                if (S_look(tenv, dec->u.type->name)) {
+                    EM_error(&dec->pos, "redefined type %s", S_name(dec->u.type->name));
+                    break;
+                }
+                S_enter(tenv, dec->u.type->name, Ty_Name(dec->u.type->name, NULL));
+                break;
+            }
+            case A_functionDec: {
+                Ty_ty result;
+                Ty_ty param_ty;
+                Ty_tyList params_head = NULL;
+                Ty_tyList params_tail = NULL;
+                // Check redefinition
+                if (S_look(venv, dec->u.function->name)) {
+                    EM_error(&dec->pos, "redefined function %s", S_name(dec->u.function->name));
+                    break;
+                }
+                // Check return type
+                if (dec->u.function->result) {
+                    result = S_look(tenv, dec->u.function->result);
+                    if (!result) {
+                        EM_error(&dec->pos, "undefined type %s", S_name(dec->u.function->result));
+                        break;
+                    }
+                }
+                // Check parameters
+                A_fieldList params = dec->u.function->params;
+                while (params) {
+                    param_ty = S_look(tenv, params->head->typ);
+                    if (!param_ty) {
+                        EM_error(&dec->pos, "undefined type %s", S_name(params->head->typ));
+                        break;
+                    }
+                    if (params_head) {
+                        params_tail->tail = Ty_TyList(param_ty, NULL);
+                        params_tail = params_tail->tail;
+                    } else {
+                        params_head = Ty_TyList(param_ty, NULL);
+                        params_tail = params_head;
+                    }
+                }
+                // Enter function declaration
+                S_enter(venv, dec->u.function->name, E_FunEntry(params_head, result));
+                break;
+            }
+            default:
+                assert(0);
+        }
+        decs = decs->tail;
+    }
+    decs = d;
+    while (decs) {
+        dec = decs->head;
+        switch (dec->kind) {
+            case A_varDec: {
+                break;
+            }
+            case A_typeDec: {
+                Ty_ty ty = S_look(tenv, dec->u.type->name);
+                ty->u.name.ty = transTy(tenv, dec->u.type->ty);
+                if (ty->u.name.ty->kind == Ty_name) {
+                    // For declaration as `type a = b`, both name type
+                    // Add into topologe table for loop checking
+                    TS_Add(top_table, ty->u.name.ty->u.name.sym, ty->u.name.sym);
+                }
+                break;
+            }
+            case A_functionDec: {
+                
+            }
+            default:
+                assert(0);
+        }
+        decs = decs->tail;
+    }
+    if (TS_Sort(top_table)) {
+        EM_error(&d->head->pos, "illegal recursive definition");
+    }
+}
 
+Ty_ty transTy (E_stack tenv, A_ty t)
+{
+    switch (t->kind) {
+        case A_nameTy: {
+            Ty_ty ty = S_look(tenv, t->u.name);
+            if (!ty) {
+                EM_error(&t->pos, "undefined type %s", S_name(t->u.name));
+                return Ty_Int();
+            }
+            return ty;
+        }
+        case A_recordTy: {
+            Ty_fieldList fields_head = NULL;
+            Ty_fieldList fields_tail = NULL;
+            A_fieldList fields = t->u.record;
+            Ty_ty ty;
+            while (fields) {
+                ty = S_look(tenv, fields->head->typ);
+                if (!ty) {
+                    EM_error(&t->pos, "undefined type %s", S_name(fields->head->typ));
+                    return Ty_Int();
+                }
+                if (fields_head) {
+                    fields_tail->tail = Ty_FieldList(Ty_Field(fields->head->name, ty), NULL);
+                    fields_tail = fields_tail->tail;
+                } else {
+                    fields_head = Ty_FieldList(Ty_Field(fields->head->name, ty), NULL);
+                    fields_tail = fields_head;
+                }
+                fields = fields->tail;
+            }
+            return Ty_Record(fields_head);
+        }
+        case A_arrayTy: {
+            Ty_ty ty = S_look(tenv, t->u.array);
+            if (!ty) {
+                EM_error(&t->pos, "undefined type %s", S_name(t->u.array));
+                return Ty_Int();
+            }
+            return Ty_Array(ty);
+        }
+    }
 }
 
 void SEM_transProg(A_exp exp)
 {
+    // Apply base environment for type
     E_stack tenv = E_base_tenv();
+    // Apply base environment for value & function
     E_stack venv = E_base_venv();
 
     transExp(venv, tenv, exp);

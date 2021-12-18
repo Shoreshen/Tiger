@@ -55,4 +55,7 @@ typedef struct Ty_tyList_ *Ty_tyList;
 typedef struct Ty_fieldList_ *Ty_fieldList;
 // ast.h
 typedef struct A_pos_ *A_pos;
+// top_sort.h
+typedef struct TS_node_ *TS_node;
+typedef struct TS_edge_ *TS_edge;
 #pragma endregion
