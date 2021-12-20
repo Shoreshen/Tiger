@@ -1,34 +1,35 @@
 #include "stack.h"
 
-STK_stack STK_push(STK_stack stack, void* value)
+void STK_push(STK_stack *stack, void* value)
 {
     STK_stack new_stack;
-    if (stack == NULL || stack->top == STACK_SIZE) {
-        new_stack = checked_malloc(sizeof(*new_stack));
-        memset(new_stack, 0, sizeof(*new_stack));
-        new_stack->next = stack;
-        stack = new_stack;
+    if ((*stack)->top == STACK_SIZE) {
+        new_stack = STK_init();
+        new_stack->next = (*stack);
+        (*stack) = new_stack;
     }
-    stack->data[stack->top] = value;
-    stack->top++;
-    return stack;
+    (*stack)->data[(*stack)->top] = value;
+    (*stack)->top++;
 }
 
-void* STK_pop(STK_stack stack)
+STK_stack STK_init()
+{
+    STK_stack s = checked_malloc(sizeof(*s));
+    memset(s, 0, sizeof(*s));
+    return s;
+}
+
+void* STK_pop(STK_stack *stack)
 {
     STK_stack tmp;
-    if (stack == NULL) {
+    void* ret = NULL;
+    if ((*stack) == NULL) {
         return NULL;
-    } else if (stack->top == 0) {
-        tmp = stack;
-        stack = stack->next;
-        free(tmp);
-        if (stack == NULL) {
-            return NULL;
-        }
-    }
-    stack->top--;
-    return stack->data[stack->top];
+    } 
+    (*stack)->top--;
+    ret = (*stack)->data[(*stack)->top];
+    
+    return ret;
 }
 
 void* STK_head(STK_stack stack)

@@ -28,25 +28,28 @@ char *S_name(S_symbol sym)
 
 void S_enter(E_stack stack, S_symbol key, void* value) 
 {
-    TAB_enter(stack->table, key, value);
+    TAB_enter(&stack->table, key, value);
 }
 
 void* S_look(E_stack stack, S_symbol key) 
 {
-    TAB_table tab = TAB_look(stack->table, key);
+    TAB_table tab = NULL;
     while (tab == NULL && stack != NULL) {
+        tab = TAB_look(&stack->table, key);
         stack = stack->next;
-        tab = TAB_look(stack->table, key);
+    }
+    if (!tab) {
+        return NULL;
     }
     return tab->value;
 }
 
-void S_beginScope(E_stack stack) 
+void S_beginScope(E_stack *stack) 
 {
     E_stack_push(stack);
 }
 
-void S_endScope(E_stack stack) 
+void S_endScope(E_stack *stack) 
 {
     E_stack_pop(stack);
 }

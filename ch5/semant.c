@@ -256,7 +256,7 @@ expty transExp(E_stack venv, E_stack tenv, A_exp e)
                 EM_error(&e->pos, "for exp's range type is not int");
                 return expTy(NULL, Ty_Void());
             }
-            S_beginScope(venv);
+            S_beginScope(&venv);
             S_enter(venv, e->u.forr.var, Ty_Int());
             inloop++;
             expty body = transExp(venv, tenv, e->u.forr.body);
@@ -264,7 +264,7 @@ expty transExp(E_stack venv, E_stack tenv, A_exp e)
             if (body->ty->kind != Ty_void) {
                 EM_error(&e->pos, "body must be void type");
             }
-            S_endScope(venv);
+            S_endScope(&venv);
             return expTy(NULL, Ty_Void());
         }
         case A_breakExp: {
@@ -276,12 +276,12 @@ expty transExp(E_stack venv, E_stack tenv, A_exp e)
         case A_letExp: {
             A_decList decs = e->u.let.decs;
             expty body;
-            S_beginScope(venv);
-            S_beginScope(tenv);
+            S_beginScope(&venv);
+            S_beginScope(&tenv);
             transDec(venv, tenv, decs);
             body = transExp(venv, tenv, e->u.let.body);
-            S_endScope(tenv);
-            S_endScope(venv);
+            S_endScope(&tenv);
+            S_endScope(&venv);
             return body;
         }
         case A_arrayExp: {
@@ -403,13 +403,13 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
             if (ty->u.name.ty->kind == Ty_name) {
                 // For declaration as `type a = b`, both name type
                 // Add into topology table for loop checking
-                TS_Add(top_table, ty->u.name.ty->u.name.sym, ty->u.name.sym);
+                TS_Add(&top_table, ty->u.name.ty->u.name.sym, ty->u.name.sym);
             }
         }
         decs = decs->tail;
     }
     // Using topology sort to check loop definition
-    if (TS_Sort(top_table)) {
+    if (TS_Sort(&top_table)) {
         EM_error(&d->head->pos, "illegal recursive definition");
         return;
     }
@@ -421,7 +421,7 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
         dec = decs->head;
         if (dec->kind == A_functionDec) {
             E_enventry fun_entry = S_look(venv, dec->u.function->name);
-            S_beginScope(venv);
+            S_beginScope(&venv);
             // Enter parameters
             Ty_tyList params_tl = fun_entry->u.fun.formals;
             A_fieldList params_fl = dec->u.function->params;
@@ -435,7 +435,7 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
             if (!actual_eq(body->ty, fun_entry->u.fun.result)) {
                 EM_error(&dec->pos, "function body type does not match with return type");
             }
-            S_endScope(venv);
+            S_endScope(&venv);
         }
         decs = decs->tail;
     }

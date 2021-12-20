@@ -4,7 +4,7 @@ let
 type a=c
 type b=a
 type c=d
-type d=a
+type d=int
 
 in
  ""
