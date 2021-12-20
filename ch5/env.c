@@ -16,32 +16,32 @@ void E_stack_pop(E_stack stack) {
         free(tmp);
     }
 }
-E_stack E_base_venv(void)
+E_stack E_base_tenv(void)
 {
-    TAB_table venv = NULL;
-    TAB_enter(venv, "int", Ty_Int());
-    TAB_enter(venv, "string", Ty_String());
-    TAB_enter(venv, "nil", Ty_Nil());
+    TAB_table tenv = NULL;
+    TAB_enter(tenv, "int", Ty_Int());
+    TAB_enter(tenv, "string", Ty_String());
+    TAB_enter(tenv, "nil", Ty_Nil());
     E_stack stack = (E_stack) checked_malloc(sizeof(struct E_stack_));
-    stack->table = venv;
+    stack->table = tenv;
     stack->next = NULL;
     return stack;
 }
-E_stack E_base_tenv(void) 
+E_stack E_base_venv(void) 
 {
-    TAB_table tenv = NULL;
-    TAB_enter(tenv, "print", Ty_Void());
-    TAB_enter(tenv, "flush", Ty_Void());
-    TAB_enter(tenv, "getchar", Ty_String());
-    TAB_enter(tenv, "ord", Ty_Int());
-    TAB_enter(tenv, "chr", Ty_Int());
-    TAB_enter(tenv, "size", Ty_Int());
-    TAB_enter(tenv, "substring", Ty_String());
-    TAB_enter(tenv, "concat", Ty_String());
-    TAB_enter(tenv, "not", Ty_Int());
-    TAB_enter(tenv, "exit", Ty_Void());
+    TAB_table venv = NULL;
+    TAB_enter(venv, "print", E_FunEntry(NULL, Ty_Void()));
+    TAB_enter(venv, "flush", E_FunEntry(NULL, Ty_Void()));
+    TAB_enter(venv, "getchar", E_FunEntry(NULL, Ty_String()));
+    TAB_enter(venv, "ord", E_FunEntry(NULL, Ty_Int()));
+    TAB_enter(venv, "chr", E_FunEntry(NULL, Ty_Int()));
+    TAB_enter(venv, "size", E_FunEntry(NULL, Ty_Int()));
+    TAB_enter(venv, "substring", E_FunEntry(NULL, Ty_String()));
+    TAB_enter(venv, "concat", E_FunEntry(NULL, Ty_String()));
+    TAB_enter(venv, "not", E_FunEntry(NULL, Ty_Int()));
+    TAB_enter(venv, "exit", E_FunEntry(NULL, Ty_Void()));
     E_stack stack = (E_stack) checked_malloc(sizeof(struct E_stack_));
-    stack->table = tenv;
+    stack->table = venv;
     stack->next = NULL;
     return stack;
 }

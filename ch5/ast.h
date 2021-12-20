@@ -164,7 +164,8 @@ struct A_ty_ {
 };
 
 struct A_field_ {
-    S_symbol name, typ;
+    S_symbol name;
+    S_symbol typ;
     struct A_pos_ pos;
     int escape;
 };

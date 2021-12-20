@@ -1,4 +1,5 @@
 #include "top_sort.h"
+#include "stack.h"
 
 TS_node lookup_or_insert(TS_node table, void* key) 
 {
@@ -57,26 +58,35 @@ void TS_free(TS_node table)
 
 int TS_Sort(TS_node table)
 {
-    int changed = 1;
+    STK_stack stack = NULL;
     TS_node table_tmp = NULL;
     TS_node node = NULL;
     TS_edge edge = NULL;
-    while (changed) {
-        changed = 0;
-        HASH_ITER(hh, table, node, table_tmp) {
-            if (node->indegree == 0) {
-                edge = node->edges;
-                while (node->edges) {
-                    edge = node->edges;
-                    edge->to->indegree--;
-                    node->edges = edge->next;
-                    free(edge);
-                }
-                HASH_DEL(table, node);
-                free(node);
-                changed = 1;
-            }
+    // Push into the stack all the nodes with indegree 0
+    HASH_ITER(hh, table, node, table_tmp) {
+        if (node->indegree == 0) {
+            HASH_DEL(table, node);
+            stack = STK_push(stack, node);
+            free(node);
         }
+    }
+    // While the stack is not empty, pop the top node 
+    // Decrease the indegree of the node's edges
+    // Push the node into the stack if the indegree is 0
+    while(stack) {
+        node = STK_pop(stack);
+        while (node->edges) {
+            edge = node->edges;
+            node->edges = edge->next;
+            edge->to->indegree--;
+            if (edge->to->indegree == 0) {
+                HASH_DEL(table, edge->to);
+                stack = STK_push(stack, edge->to);
+                free(edge->to);
+            }
+            free(edge);
+        }
+        free(node);
     }
     return HASH_COUNT(table);
 }

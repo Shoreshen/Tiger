@@ -58,4 +58,6 @@ typedef struct A_pos_ *A_pos;
 // top_sort.h
 typedef struct TS_node_ *TS_node;
 typedef struct TS_edge_ *TS_edge;
+// stack.c
+typedef struct STK_stack_* STK_stack;
 #pragma endregion

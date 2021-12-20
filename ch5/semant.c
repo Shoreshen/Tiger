@@ -339,7 +339,7 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
                         break;
                     }
                 }
-                S_enter(venv, dec->u.var.var, init->ty);
+                S_enter(venv, dec->u.var.var, E_VarEntry(init->ty));
                 break;
             }
             case A_typeDec: {
@@ -397,30 +397,47 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
     decs = d;
     while (decs) {
         dec = decs->head;
-        switch (dec->kind) {
-            case A_varDec: {
-                break;
+        if (dec->kind == A_typeDec) {
+            Ty_ty ty = S_look(tenv, dec->u.type->name);
+            ty->u.name.ty = transTy(tenv, dec->u.type->ty);
+            if (ty->u.name.ty->kind == Ty_name) {
+                // For declaration as `type a = b`, both name type
+                // Add into topology table for loop checking
+                TS_Add(top_table, ty->u.name.ty->u.name.sym, ty->u.name.sym);
             }
-            case A_typeDec: {
-                Ty_ty ty = S_look(tenv, dec->u.type->name);
-                ty->u.name.ty = transTy(tenv, dec->u.type->ty);
-                if (ty->u.name.ty->kind == Ty_name) {
-                    // For declaration as `type a = b`, both name type
-                    // Add into topologe table for loop checking
-                    TS_Add(top_table, ty->u.name.ty->u.name.sym, ty->u.name.sym);
-                }
-                break;
-            }
-            case A_functionDec: {
-                
-            }
-            default:
-                assert(0);
         }
         decs = decs->tail;
     }
+    // Using topology sort to check loop definition
     if (TS_Sort(top_table)) {
         EM_error(&d->head->pos, "illegal recursive definition");
+        return;
+    }
+    // Dealing with function declaration at last
+    // Because type declaration may create loop definition
+    // which cause dead loop when calling `actual_eq`
+    decs = d;
+    while (decs) {
+        dec = decs->head;
+        if (dec->kind == A_functionDec) {
+            E_enventry fun_entry = S_look(venv, dec->u.function->name);
+            S_beginScope(venv);
+            // Enter parameters
+            Ty_tyList params_tl = fun_entry->u.fun.formals;
+            A_fieldList params_fl = dec->u.function->params;
+            while (params_fl) {
+                S_enter(venv, params_fl->head->name, E_VarEntry(params_tl->head));
+                params_tl = params_tl->tail;
+                params_fl = params_fl->tail;
+            }
+            // Check function body type with return type
+            expty body = transExp(venv, tenv, dec->u.function->body);
+            if (!actual_eq(body->ty, fun_entry->u.fun.result)) {
+                EM_error(&dec->pos, "function body type does not match with return type");
+            }
+            S_endScope(venv);
+        }
+        decs = decs->tail;
     }
 }
 
