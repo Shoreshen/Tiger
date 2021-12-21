@@ -305,7 +305,7 @@ expty transExp(E_stack venv, E_stack tenv, A_exp e)
                 EM_error(&e->pos, "array expression: initialize type does not match with given type");
                 return expTy(NULL, Ty_Array(NULL));
             }
-            return expTy(NULL, Ty_Array(init->ty));
+            return expTy(NULL, actual);
         }
     }
 }
@@ -319,27 +319,6 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
         dec = decs->head;
         switch (dec->kind) {
             case A_varDec: {
-                Ty_ty dec_ty = NULL;
-                if (dec->u.var.typ) {
-                    dec_ty = S_look(tenv, dec->u.var.typ);
-                    if (!dec_ty) {
-                        EM_error(&dec->pos, "undefined type %s", S_name(dec->u.var.typ));
-                        break;
-                    }
-                }
-                expty init = transExp(venv, tenv, dec->u.var.init);
-                if (dec_ty) {
-                    if (!actual_eq(init->ty, dec_ty)) {
-                        EM_error(&dec->pos, "initialize type does not match with given type");
-                        break;
-                    }
-                } else {
-                    if (init->ty->kind == Ty_nil) {
-                        EM_error(&dec->pos, "variable declare: illegal nil type: nil must be assign to a explictly record type");
-                        break;
-                    }
-                }
-                S_enter(venv, dec->u.var.var, E_VarEntry(init->ty));
                 break;
             }
             case A_typeDec: {
@@ -413,29 +392,59 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
         EM_error(&d->head->pos, "illegal recursive definition");
         return;
     }
-    // Dealing with function declaration at last
-    // Because type declaration may create loop definition
-    // which cause dead loop when calling `actual_eq`
+    // Dealing with function, var declaration at last
+    // Because type declaration may create loop definition or NULL name type
+    // which cause dead loop or crash when calling `actual_eq`
     decs = d;
     while (decs) {
         dec = decs->head;
-        if (dec->kind == A_functionDec) {
-            E_enventry fun_entry = S_look(venv, dec->u.function->name);
-            S_beginScope(&venv);
-            // Enter parameters
-            Ty_tyList params_tl = fun_entry->u.fun.formals;
-            A_fieldList params_fl = dec->u.function->params;
-            while (params_fl) {
-                S_enter(venv, params_fl->head->name, E_VarEntry(params_tl->head));
-                params_tl = params_tl->tail;
-                params_fl = params_fl->tail;
+        switch (dec->kind) {
+            case A_varDec: {
+                Ty_ty dec_ty = NULL;
+                if (dec->u.var.typ) {
+                    dec_ty = S_look(tenv, dec->u.var.typ);
+                    if (!dec_ty) {
+                        EM_error(&dec->pos, "undefined type %s", S_name(dec->u.var.typ));
+                        break;
+                    }
+                }
+                expty init = transExp(venv, tenv, dec->u.var.init);
+                if (dec_ty) {
+                    if (!actual_eq(init->ty, dec_ty)) {
+                        EM_error(&dec->pos, "initialize type does not match with given type");
+                        break;
+                    }
+                } else {
+                    if (init->ty->kind == Ty_nil) {
+                        EM_error(&dec->pos, "variable declare: illegal nil type: nil must be assign to a explictly record type");
+                        break;
+                    }
+                }
+                S_enter(venv, dec->u.var.var, E_VarEntry(init->ty));
+                break;
             }
-            // Check function body type with return type
-            expty body = transExp(venv, tenv, dec->u.function->body);
-            if (!actual_eq(body->ty, fun_entry->u.fun.result)) {
-                EM_error(&dec->pos, "function body type does not match with return type");
+            case A_typeDec: {
+                break;
             }
-            S_endScope(&venv);
+            case A_functionDec: {
+                E_enventry fun_entry = S_look(venv, dec->u.function->name);
+                S_beginScope(&venv);
+                // Enter parameters
+                Ty_tyList params_tl = fun_entry->u.fun.formals;
+                A_fieldList params_fl = dec->u.function->params;
+                while (params_fl) {
+                    S_enter(venv, params_fl->head->name, E_VarEntry(params_tl->head));
+                    params_tl = params_tl->tail;
+                    params_fl = params_fl->tail;
+                }
+                // Check function body type with return type
+                expty body = transExp(venv, tenv, dec->u.function->body);
+                if (!actual_eq(body->ty, fun_entry->u.fun.result)) {
+                    EM_error(&dec->pos, "function body type does not match with return type");
+                }
+                S_endScope(&venv);
+                break;
+            }
         }
         decs = decs->tail;
     }

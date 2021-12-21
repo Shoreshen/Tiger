@@ -1,29 +1,34 @@
 #include "types.h"
 #include "symbol.h"
 
+struct Ty_ty_ tynil = {
+    .kind = Ty_nil,
+};
+struct Ty_ty_ tyint = {
+    .kind = Ty_int,
+};
+struct Ty_ty_ tystring = {
+    .kind = Ty_string,
+};
+struct Ty_ty_ tyvoid = {
+    .kind = Ty_void,
+};
+
 Ty_ty Ty_Nil(void)
 {
-    Ty_ty p = (Ty_ty) checked_malloc(sizeof(*p));
-    p->kind = Ty_nil;
-    return p;
+    return &tynil;
 }
 Ty_ty Ty_Int(void)
 {
-    Ty_ty p = (Ty_ty) checked_malloc(sizeof(*p));
-    p->kind = Ty_int;
-    return p;
+    return &tyint;
 }
 Ty_ty Ty_String(void)
 {
-    Ty_ty p = (Ty_ty) checked_malloc(sizeof(*p));
-    p->kind = Ty_string;
-    return p;
+    return &tystring;
 }
 Ty_ty Ty_Void(void)
 {
-    Ty_ty p = (Ty_ty) checked_malloc(sizeof(*p));
-    p->kind = Ty_void;
-    return p;
+    return &tyvoid;
 }
 Ty_ty Ty_Array(Ty_ty ty)
 {
