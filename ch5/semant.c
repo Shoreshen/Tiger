@@ -333,7 +333,7 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
                 break;
             }
             case A_functionDec: {
-                Ty_ty result;
+                Ty_ty result = NULL;
                 Ty_ty param_ty;
                 Ty_tyList params_head = NULL;
                 Ty_tyList params_tail = NULL;
@@ -349,6 +349,8 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
                         EM_error(&dec->pos, "Desc->func: undefined type %s", S_name(dec->u.function->result));
                         break;
                     }
+                } else {
+                    result = Ty_Void();
                 }
                 // Check parameters
                 A_fieldList params = dec->u.function->params;
@@ -365,6 +367,7 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
                         params_head = Ty_TyList(param_ty, NULL);
                         params_tail = params_head;
                     }
+                    params = params->tail;
                 }
                 // Enter function declaration
                 S_enter(venv, dec->u.function->name, E_FunEntry(params_head, result));
@@ -392,6 +395,7 @@ void transDec(E_stack venv, E_stack tenv, A_decList d)
     // Using topology sort to check loop definition
     if (TS_Sort(&top_table)) {
         EM_error(&d->head->pos, "Desc->type: illegal recursive definition");
+        TS_free(&top_table);
         return;
     }
     // Dealing with function, var declaration at last

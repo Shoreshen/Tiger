@@ -85,7 +85,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/ch5.out",
-            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/test31.tig"],
+            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/queens.tig"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

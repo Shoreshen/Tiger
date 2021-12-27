@@ -31,7 +31,7 @@ E_stack E_base_tenv(void)
 E_stack E_base_venv(void) 
 {
     TAB_table venv = NULL;
-    TAB_enter(&venv, S_Symbol("print"), E_FunEntry(NULL, Ty_Void()));
+    TAB_enter(&venv, S_Symbol("print"), E_FunEntry(Ty_TyList(Ty_String(), NULL), Ty_Void()));
     TAB_enter(&venv, S_Symbol("flush"), E_FunEntry(NULL, Ty_Void()));
     TAB_enter(&venv, S_Symbol("getchar"), E_FunEntry(NULL, Ty_String()));
     TAB_enter(&venv, S_Symbol("ord"), E_FunEntry(NULL, Ty_Int()));
