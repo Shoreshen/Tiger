@@ -23,10 +23,19 @@ void* STK_pop(STK_stack *stack)
 {
     STK_stack tmp;
     void* ret = NULL;
+
     if ((*stack) == NULL) {
         return NULL;
     } 
+    
     (*stack)->top--;
+    // If the stack is empty and next is not NULL, pop the top of the next stack
+    if ((*stack)->top == 0 && (*stack)->next != NULL) {
+        tmp = (*stack)->next;
+        free(*stack);
+        (*stack) = tmp;
+    }
+    
     ret = (*stack)->data[(*stack)->top];
     
     return ret;
@@ -35,12 +44,4 @@ void* STK_pop(STK_stack *stack)
 void* STK_head(STK_stack stack)
 {
     return stack->data[stack->top - 1];
-}
-
-int STK_check_empty(STK_stack stack)
-{
-    if (stack == NULL) {
-        return 1;
-    }
-    return 0;
 }

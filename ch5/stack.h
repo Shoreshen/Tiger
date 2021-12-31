@@ -11,4 +11,3 @@ struct STK_stack_ {
 STK_stack STK_init();
 void STK_push(STK_stack *stack, void* value);
 void* STK_pop(STK_stack *stack);
-int STK_check_empty(STK_stack stack);
