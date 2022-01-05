@@ -85,7 +85,26 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/ch5.out",
-            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/queens.tig"],
+            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/test42.tig"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "ch6",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ch6.out",
+            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/test16.tig"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
