@@ -1,6 +1,7 @@
 #include "escape.h"
 #include "env.h"
 #include "symbol.h"
+#include "errormsg.h"
 
 typedef struct escapeEntry_* escapeEntry;
 
@@ -18,6 +19,16 @@ escapeEntry EscapeEntry(int depth, int* escape) {
     e->depth = depth;
     e->escape = escape;
     return e;
+}
+
+void insertEscape(E_stack stack, S_symbol key, escapeEntry entry)
+{
+    if (!S_look(stack, key)) {
+        *(entry->escape) = FALSE;
+        S_enter(stack, key, entry);
+    } else {
+        EM_error(0, "ESC: Duplicate symbol: %s", S_name(key));
+    }
 }
 
 void Esc_findEscape(A_exp exp)
@@ -85,7 +96,7 @@ void traverseExp(E_stack env, int depth, A_exp e)
             traverseExp(env, depth, e->u.forr.hi);
             S_beginScope(&env);
             e->u.forr.escape = FALSE;
-            S_enter(env, e->u.forr.var, EscapeEntry(depth, &(e->u.forr.escape)));
+            insertEscape(env, e->u.forr.var, EscapeEntry(depth, &(e->u.forr.escape)));
             traverseExp(env, depth, e->u.forr.body);
             S_endScope(&env);
             return;
@@ -104,13 +115,58 @@ void traverseExp(E_stack env, int depth, A_exp e)
             return;
         }
     }
+    return;
 }
 
 void traverseDec(E_stack env, int depth, A_decList d)
 {
-
+    while (d) {
+        switch (d->head->kind) {
+            case A_varDec: {
+                traverseExp(env, depth, d->head->u.var.init);
+                insertEscape(env, d->head->u.var.var, EscapeEntry(depth, &(d->head->u.var.escape)));
+                return;
+            }
+            case A_typeDec: {
+                return;
+            }
+            case A_functionDec: {
+                A_fundec funcs = d->head->u.function;
+                S_beginScope(&env);
+                A_fieldList params = funcs->params;
+                while (params) {
+                    insertEscape(env, params->head->name, EscapeEntry(depth + 1, &(params->head->escape)));
+                    params = params->tail;
+                }
+                traverseExp(env, depth + 1, funcs->body);
+                S_endScope(&env);
+                return;
+            }
+        }
+        d = d->tail;
+    }
 }
 void traverseVar(E_stack env, int depth, A_var v)
 {
-    
+    switch (v->kind) {
+        case A_simpleVar: {
+            escapeEntry entry = S_look(env, v->u.simple);
+            if (!entry) {
+                EM_error(0, "ESC: Undefined variable: %s", S_name(v->u.simple));
+                return;
+            }
+            if (entry->depth < depth) {
+                *(entry->escape) = TRUE;
+            }
+            return;
+        }
+        case A_fieldVar: {
+            traverseVar(env, depth, v->u.field.var);
+            return;
+        }
+        case A_subscriptVar: {
+            traverseVar(env, depth, v->u.subscript.var);
+            traverseExp(env, depth, v->u.subscript.exp);
+        }
+    }
 }
