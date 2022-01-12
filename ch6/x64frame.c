@@ -73,3 +73,13 @@ F_access F_allocLocal(F_frame f, int escape)
     }
     return a;
 }
+
+F_accessList F_formals(F_frame f)
+{
+    return f->formals;
+}
+
+Temp_label F_name(F_frame f)
+{
+    return f->name;
+}

@@ -10,12 +10,15 @@ struct E_enventry_ {
         E_funEntry 
     } kind;
     union {
-        struct { 
+        struct {
+            Tr_access access;
             Ty_ty ty; 
         } var;
-        struct { 
+        struct {
+            Tr_level level;
+            Temp_label label;
             Ty_tyList formals; 
-            Ty_ty result; 
+            Ty_ty result;
         } fun;
     } u;
 };
@@ -30,5 +33,5 @@ void E_stack_pop(E_stack* stack);
 E_stack E_base_venv(void);
 E_stack E_base_tenv(void);
 E_stack E_empty_env(void);
-E_enventry E_VarEntry(Ty_ty ty);
-E_enventry E_FunEntry(Ty_tyList formals, Ty_ty result);
+E_enventry E_VarEntry(Tr_access access, Ty_ty ty);
+E_enventry E_FunEntry(Tr_level level, Temp_label label, Ty_tyList formals, Ty_ty result);
