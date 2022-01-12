@@ -13,18 +13,27 @@
 #define STEP_STR_LEN 128
 #define GET_CAP_LEN(len) ((len + STEP_STR_LEN - 1) / STEP_STR_LEN * STEP_STR_LEN)
 
+void* checked_malloc(int len);
+
+#pragma region string
 struct string {
     int cap;
     int len;
     char *data;
 };
-
-void* checked_malloc(int len);
-
-#pragma region string
 void init_str(struct string* str);
 void put_str(struct string* str, char src);
 void append_str(struct string* str, char* src);
+char* get_heap_str(char* str);
+#pragma endregion
+
+#pragma region boollist
+typedef struct U_boolList_ *U_boolList;
+struct U_boolList_ {
+    int head;
+    U_boolList tail;
+};
+U_boolList U_BoolList(int head, U_boolList tail);
 #pragma endregion
 
 #pragma region Wrapper for flex & bison
@@ -60,4 +69,7 @@ typedef struct TS_node_ *TS_node;
 typedef struct TS_edge_ *TS_edge;
 // stack.c
 typedef struct STK_stack_* STK_stack;
+// temp.c
+typedef struct Temp_temp_ *Temp_temp;
+typedef struct S_symbol_ *Temp_label;
 #pragma endregion

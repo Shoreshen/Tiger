@@ -44,3 +44,18 @@ void append_str(struct string* str, char* src)
     strcat(str->data, src);
     str->len = new_len;
 }
+
+char* get_heap_str(char* str)
+{
+    char *tmp = checked_malloc(strlen(str) + 1);
+    strcpy(tmp, str);
+    return tmp;
+}
+
+U_boolList U_BoolList(int head, U_boolList tail)
+{
+    U_boolList p = checked_malloc(sizeof(*p));
+    p->head = head;
+    p->tail = tail;
+    return p;
+}
