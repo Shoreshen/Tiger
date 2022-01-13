@@ -67,6 +67,17 @@ run_ch6:ch6.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
+# ch7 ===========================================================================================
+./ch7/tiger.tab.c ./ch7/tiger.tab.h: ./ch7/tiger.y
+	bison -d -Wcounterexamples -o ./ch7/tiger.tab.c $<
+./ch7/tiger.yy.c:./ch7/tiger.tab.h ./ch7/tiger.l
+	flex --outfile=$@ ./ch7/tiger.l
+ch7.out:./ch7/tiger.yy.c ./ch7/tiger.tab.c ./ch7/tiger.tab.h ./ch7/*.c
+	gcc $(CFLAGS) ./ch7/*.c -o $@
+run_ch7:ch7.out
+	@echo "Please type in file names: "; \
+	read file; \
+	./$< $$file
 # Clean =========================================================================================
 clean:
 	-rm *.out
@@ -75,6 +86,7 @@ clean:
 	-rm ./ch4/*.yy.c ./ch4/*.tab.*
 	-rm ./ch5/*.yy.c ./ch5/*.tab.*
 	-rm ./ch6/*.yy.c ./ch6/*.tab.*
+	-rm ./ch7/*.yy.c ./ch7/*.tab.*
 PHONY += clean
 # GitHub ========================================================================================
 sub_pull:
