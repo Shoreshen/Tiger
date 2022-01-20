@@ -11,11 +11,11 @@ void E_stack_push(E_stack* stack) {
     tmp->next = *stack;
     *stack = tmp;
 }
-void E_stack_pop(E_stack* stack) {
+void E_stack_pop(E_stack* stack, void (*freeVal)(void* value)) {
     E_stack tmp = *stack;
     if (stack != NULL) {
         *stack = (*stack)->next;
-        TAB_free(&tmp->table);
+        TAB_free(&tmp->table, freeVal);
         free(tmp);
     }
 }

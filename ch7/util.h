@@ -14,6 +14,7 @@
 #define GET_CAP_LEN(len) ((len + STEP_STR_LEN - 1) / STEP_STR_LEN * STEP_STR_LEN)
 
 void* checked_malloc(int len);
+void indent(FILE *out, int d);
 
 #pragma region string
 struct string {
@@ -72,6 +73,7 @@ typedef struct STK_stack_* STK_stack;
 // temp.c
 typedef struct Temp_temp_ *Temp_temp;
 typedef struct S_symbol_ *Temp_label;
+typedef struct Temp_labelList_* Temp_labelList;
 // translate.c
 typedef struct Tr_access_ *Tr_access;
 typedef struct Tr_level_ *Tr_level;

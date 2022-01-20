@@ -59,3 +59,11 @@ U_boolList U_BoolList(int head, U_boolList tail)
     p->tail = tail;
     return p;
 }
+
+void indent(FILE *out, int d)
+{
+    int i;
+    for (i = 0; i < d; i++) {
+        fprintf(out, "    ");
+    }
+}

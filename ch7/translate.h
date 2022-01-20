@@ -3,7 +3,7 @@
 
 
 typedef struct Tr_accessList_ *Tr_accessList;
-
+typedef struct Tr_exp_ *Tr_exp;
 struct Tr_accessList_ {
     Tr_access head;
     Tr_accessList tail;

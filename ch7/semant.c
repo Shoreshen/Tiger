@@ -275,7 +275,7 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, A_exp e)
             if (body->ty->kind != Ty_void) {
                 EM_error(&e->pos, "Expr->for: body must be void type");
             }
-            S_endScope(&venv);
+            S_endScope(&venv, NULL);
             return expTy(NULL, Ty_Void());
         }
         case A_breakExp: {
@@ -291,8 +291,8 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, A_exp e)
             S_beginScope(&tenv);
             transDec(level, venv, tenv, decs);
             body = transExp(level, venv, tenv, e->u.let.body);
-            S_endScope(&tenv);
-            S_endScope(&venv);
+            S_endScope(&tenv, NULL);
+            S_endScope(&venv, NULL);
             return body;
         }
         case A_arrayExp: {
@@ -467,7 +467,7 @@ void transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d)
                 if (!actual_eq(body->ty, fun_entry->u.fun.result)) {
                     EM_error(&dec->pos, "Desc->func: function body type does not match with return type");
                 }
-                S_endScope(&venv);
+                S_endScope(&venv, NULL);
                 break;
             }
         }

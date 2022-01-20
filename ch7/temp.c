@@ -22,3 +22,19 @@ Temp_label Temp_namedlabel(char* name)
 {
     return S_Symbol(name);
 }
+
+Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t) 
+{
+    Temp_tempList p = checked_malloc(sizeof (*p));
+    p->head=h; 
+    p->tail=t;
+    return p;
+}
+
+Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t)
+{
+    Temp_labelList p = checked_malloc(sizeof (*p));
+    p->head=h; 
+    p->tail=t;
+    return p;
+}

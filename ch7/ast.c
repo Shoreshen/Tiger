@@ -278,13 +278,6 @@ A_efieldList A_EfieldList(A_efield head, A_efieldList tail)
 #pragma endregion
 
 #pragma region AST print
-void indent(FILE *out, int d)
-{
-    int i;
-    for (i = 0; i < d; i++) {
-        fprintf(out, "    ");
-    }
-}
 void new_line(FILE *out, int d, char *pre_s, char *post_s)
 {
     fprintf(out, "%s\n", pre_s);

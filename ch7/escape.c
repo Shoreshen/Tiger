@@ -98,7 +98,7 @@ void traverseExp(E_stack env, int depth, A_exp e)
             e->u.forr.escape = FALSE;
             insertEscape(env, e->u.forr.var, EscapeEntry(depth, &(e->u.forr.escape)));
             traverseExp(env, depth, e->u.forr.body);
-            S_endScope(&env);
+            S_endScope(&env, NULL);
             return;
         }
         case A_letExp: {
@@ -106,7 +106,7 @@ void traverseExp(E_stack env, int depth, A_exp e)
             S_beginScope(&env);
             traverseDec(env, depth, decs);
             traverseExp(env, depth, e->u.let.body);
-            S_endScope(&env);
+            S_endScope(&env, NULL);
             return;
         }
         case A_arrayExp: {
@@ -139,7 +139,7 @@ void traverseDec(E_stack env, int depth, A_decList d)
                     params = params->tail;
                 }
                 traverseExp(env, depth + 1, funcs->body);
-                S_endScope(&env);
+                S_endScope(&env, NULL);
                 return;
             }
         }
