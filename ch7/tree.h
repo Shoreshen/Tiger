@@ -2,8 +2,6 @@
 
 #include "util.h"
 
-typedef struct T_stm_ *T_stm;
-typedef struct T_exp_ *T_exp;
 typedef struct T_expList_ *T_expList;
 typedef struct T_stmList_ *T_stmList;
 

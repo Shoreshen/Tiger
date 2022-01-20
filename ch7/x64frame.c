@@ -1,5 +1,6 @@
 #include "frame.h"
 #include "temp.h"
+#include "tree.h"
 
 #define F_KEEP 6 // keep 6 formal param in registers
 #define F_WORD_SIZE 8 // x64 architecture
@@ -14,6 +15,24 @@ struct F_access_ {
         Temp_temp reg;
     } u;
 };
+
+T_exp F_Exp(F_access acc, T_exp framePtr) {
+    if (acc->kind == inFrame) {
+        return T_Mem(T_Binop(T_plus, framePtr, T_Const(acc->u.offset)));
+    } else {
+        return T_Temp(acc->u.reg);
+    }
+}
+
+Temp_temp F_FP() {
+    // x86-64 architecture use rbp as frame pointer
+    // it is a constant register, thus return a const Temp_temp
+    static Temp_temp fp = NULL;
+    if(!fp) {
+        fp = Temp_newtemp();
+    }
+    return fp;
+}
 
 F_access InFrame(int offset)
 {
@@ -49,7 +68,7 @@ F_frame F_newFrame(Temp_label name, U_boolList formals)
     f->inFrame_count = 1; // First resarve for return address
 
     while (formals) {
-        if (f->inReg_count < F_KEEP) {
+        if (f->inReg_count < F_KEEP && !(formals->head)) {
             f->formals = F_AccessList(InReg(Temp_newtemp()), f->formals);
             f->inReg_count++;
         } else {

@@ -3,6 +3,7 @@
 #include "temp.h"
 #include "tree.h"
 
+#pragma region internal struct
 typedef struct patchList_ *patchList;
 typedef struct Tr_cjx_* Tr_cjx;
 struct Tr_level_ {
@@ -35,7 +36,9 @@ struct Tr_exp_ {
         Tr_cjx cx; 
     } u;
 };
+#pragma endregion
 
+#pragma region internal function
 Tr_exp Tr_Ex(T_exp ex)
 {
     Tr_exp e = checked_malloc(sizeof(*e));
@@ -158,7 +161,9 @@ Tr_cjx unCx(Tr_exp e)
     }
     assert(0);
 }
+#pragma endregion
 
+#pragma region level
 static Tr_level out_most = NULL;
 
 Tr_level Tr_outermost(void)
@@ -219,3 +224,20 @@ Temp_label Tr_name(Tr_level level)
 {
     return F_name(level->frame);
 }
+#pragma endregion
+
+#pragma region create tree
+// access:  target simpleVar
+// level:   current level
+Tr_exp Tr_simpleVar(Tr_access access, Tr_level level)
+{
+    T_exp fp = F_FP();
+    while (access->level != level) {
+        // Get last(outside) fp from current fp
+        // The first parameter is static link, 
+        fp = F_Exp(Tr_formals(level)->head->access, fp);
+        level = level->parent;
+    }
+    return Tr_Ex(F_Exp(access, fp));
+}
+#pragma endregion

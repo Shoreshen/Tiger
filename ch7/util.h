@@ -77,4 +77,7 @@ typedef struct Temp_labelList_* Temp_labelList;
 // translate.c
 typedef struct Tr_access_ *Tr_access;
 typedef struct Tr_level_ *Tr_level;
+// tree.h
+typedef struct T_stm_ *T_stm;
+typedef struct T_exp_ *T_exp;
 #pragma endregion
