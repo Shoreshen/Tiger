@@ -3,7 +3,7 @@
 #include "tree.h"
 
 #define F_KEEP 6 // keep 6 formal param in registers
-#define F_WORD_SIZE 8 // x64 architecture
+const int F_WORD_SIZE = 8; // x64 architecture
 
 struct F_access_ {
     enum {

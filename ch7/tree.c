@@ -28,6 +28,20 @@ T_stm T_Seq(T_stm left, T_stm right)
     s->u.SEQ.right = right;
     return s;
 }
+// The last parameter must be NULL, for va_list to stop
+T_stm T_Seqs(T_stm stms, ...)
+{
+    va_list stm;
+    T_stm tmp, last;
+    va_start(stm, stms);
+    tmp = va_arg(stm, T_stm);
+    last = tmp;
+    while (tmp = va_arg(stm, T_stm)) {
+        last = T_Seq(last, tmp);
+    }
+    va_end(stm);
+    return last;
+}
 T_stm T_Label(Temp_label lab)
 {
     T_stm s = checked_malloc(sizeof(*s));

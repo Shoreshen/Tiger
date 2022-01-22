@@ -83,6 +83,18 @@ void doPatch(patchList tList, Temp_label label) {
     }
 }
 
+patchList joinPatch(patchList first, patchList second) {
+    if (!first) {
+        return second;
+    }
+    patchList tmp = first;
+    while (tmp->tail) {
+        tmp = tmp->tail;
+    }
+    tmp->tail = second;
+    return first;
+}
+
 T_exp unEx(Tr_exp e)
 {
     switch(e->kind) {
@@ -227,17 +239,136 @@ Temp_label Tr_name(Tr_level level)
 #pragma endregion
 
 #pragma region create tree
-// access:  target simpleVar
-// level:   current level
 Tr_exp Tr_simpleVar(Tr_access access, Tr_level level)
 {
-    T_exp fp = F_FP();
+    // access:  target simpleVar
+    // level:   current level
+    T_exp fp = T_Temp(F_FP());
     while (access->level != level) {
         // Get last(outside) fp from current fp
         // The first parameter is static link, 
         fp = F_Exp(Tr_formals(level)->head->access, fp);
         level = level->parent;
     }
-    return Tr_Ex(F_Exp(access, fp));
+    return Tr_Ex(F_Exp(access->access, fp));
+}
+Tr_exp Tr_subscriptVar(Tr_exp var, Tr_exp index)
+{
+    return Tr_Ex(
+        T_Mem(
+            T_Binop(
+                T_plus, 
+                unEx(var), 
+                T_Binop(T_mul, unEx(index), T_Const(F_WORD_SIZE))
+            )
+        )
+    );
+}
+Tr_exp Tr_fieldVar(Tr_exp var, int pos)
+{
+    return Tr_Ex(
+        T_Mem(
+            T_Binop(
+                T_plus, 
+                unEx(var), 
+                T_Const(pos * F_WORD_SIZE)
+            )
+        )
+    );
+}
+Tr_exp Tr_nilExp()
+{
+    return Tr_Ex(T_Const(0));
+}
+Tr_exp Tr_intExp(int i)
+{
+    return Tr_Ex(T_Const(i));
+}
+Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
+{
+    Temp_label t = Temp_newlabel();
+    Temp_label f = Temp_newlabel();
+    Tr_cjx cond = unCx(test);
+    doPatch(cond->trues, t);
+    doPatch(cond->falses, f);
+
+    if (elsee) {
+        Temp_label join = Temp_newlabel();
+        if (then->kind == Tr_nx && elsee->kind == Tr_nx) {
+            // Both then and else are nx, no value for if expression
+            return Tr_Nx(
+                T_Seqs(
+                    // Jump to label "t" if cond is true, label "f" if cond is false
+                    cond->stm,
+                    T_Label(t),
+                    then->u.nx,
+                    T_Jump(T_Name(join), Temp_LabelList(join, NULL)),
+                    T_Label(f),
+                    elsee->u.nx,
+                    T_Label(join),
+                    NULL
+                )
+            );
+        } else if (then->kind == Tr_cx && elsee->kind == Tr_cx) {
+            // Both then and else are cx
+            patchList new_t = joinPatch(then->u.cx->trues, elsee->u.cx->trues);
+            patchList new_f = joinPatch(then->u.cx->falses, elsee->u.cx->falses);
+            return Tr_Cx(new_t, new_f,
+                T_Seqs(
+                    cond->stm, // Jump to label "t" if cond is true, label "f" if cond is false
+                    T_Label(t),
+                    // Jump to label "new_t" or "new_f", which will be filled later
+                    // Thus no need to add further jump (e.g to label "join") 
+                    then->u.cx->stm, 
+                    T_Label(f),
+                    // Same as above
+                    elsee->u.cx->stm,
+                    NULL
+                )
+            );
+        } else {
+            T_exp then_exp = unEx(then);
+            T_exp else_exp = unEx(elsee);
+            Temp_temp r = Temp_newtemp();
+            return Tr_Ex(
+                T_Eseq(
+                    T_Seqs(
+                        cond->stm,
+                        T_Label(t),
+                        T_Move(T_Temp(r), then_exp),
+                        T_Jump(T_Name(join), Temp_LabelList(join, NULL)),
+                        T_Label(f),
+                        T_Move(T_Temp(r), else_exp),
+                        T_Label(join),
+                        NULL
+                    ),
+                    T_Temp(r)
+                )
+            );
+        }
+    } else {
+        // If no else, then must be no return value for if expression
+        if (then->kind == Tr_cx) {
+            return Tr_Nx(
+                T_Seqs(
+                    cond->stm,
+                    T_Label(t),
+                    then->u.cx->stm,
+                    T_Label(f),
+                    NULL
+                )
+            );
+        } else {
+            return Tr_Nx(
+                T_Seqs(
+                    cond->stm,
+                    T_Label(t),
+                    unNx(then),
+                    T_Label(f),
+                    NULL
+                )
+            );
+        }
+    }
 }
 #pragma endregion

@@ -343,12 +343,6 @@ void print_oper(FILE *out, A_oper oper, int d)
         case A_geOp:
             fprintf(out, "geOp");
             break;
-        case A_andOp:
-            fprintf(out, "andOp");
-            break;
-        case A_orOp:
-            fprintf(out, "orOp");
-            break;
         default:
             assert(0);
     }

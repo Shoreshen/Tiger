@@ -25,3 +25,5 @@ F_access F_allocLocal(F_frame f, int escape);
 Temp_label F_name(F_frame f);
 Temp_temp F_FP();
 T_exp F_Exp(F_access acc, T_exp framePtr);
+
+extern const int F_WORD_SIZE;

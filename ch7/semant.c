@@ -138,8 +138,12 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, A_exp e)
         case A_opExp: {
             expty left = transExp(level, venv, tenv, e->u.op.left);
             expty right = transExp(level, venv, tenv, e->u.op.right);
-            if (e->u.op.oper == A_plusOp || e->u.op.oper == A_minusOp ||
-                e->u.op.oper == A_timesOp || e->u.op.oper == A_divideOp) {
+            if (
+                e->u.op.oper == A_plusOp || 
+                e->u.op.oper == A_minusOp ||
+                e->u.op.oper == A_timesOp || 
+                e->u.op.oper == A_divideOp
+            ) {
                 if (left->ty->kind != Ty_int || right->ty->kind != Ty_int) {
                     EM_error(&e->pos, "Expr->op: integer required");
                     return expTy(NULL, Ty_Int());
@@ -153,15 +157,12 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, A_exp e)
                 } else {
                     return expTy(NULL, Ty_Int());
                 }
-            } else if (e->u.op.oper == A_ltOp || e->u.op.oper == A_leOp ||
-                       e->u.op.oper == A_gtOp || e->u.op.oper == A_geOp) {
-                if (left->ty->kind != Ty_int || right->ty->kind != Ty_int) {
-                    EM_error(&e->pos, "Expr->op: integer required");
-                    return expTy(NULL, Ty_Int());
-                } else {
-                    return expTy(NULL, Ty_Int());
-                }
-            } else if (e->u.op.oper == A_andOp || e->u.op.oper == A_orOp) {
+            } else if (
+                e->u.op.oper == A_ltOp || 
+                e->u.op.oper == A_leOp ||
+                e->u.op.oper == A_gtOp || 
+                e->u.op.oper == A_geOp
+            ) {
                 if (left->ty->kind != Ty_int || right->ty->kind != Ty_int) {
                     EM_error(&e->pos, "Expr->op: integer required");
                     return expTy(NULL, Ty_Int());
