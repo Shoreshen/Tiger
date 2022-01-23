@@ -4,10 +4,15 @@
 
 typedef struct Tr_accessList_ *Tr_accessList;
 typedef struct Tr_exp_ *Tr_exp;
+typedef struct Tr_expList_ *Tr_expList;
 
 struct Tr_accessList_ {
     Tr_access head;
     Tr_accessList tail;
+};
+struct Tr_expList_ {
+    Tr_exp head; 
+    Tr_expList tail;
 };
 
 // level 
@@ -18,6 +23,7 @@ Tr_accessList Tr_formals(Tr_level level);
 Temp_label Tr_name(Tr_level level);
 
 // Translate into tree
+Tr_exp Tr_ExpList(Tr_exp head, Tr_expList tail);
 Tr_exp Tr_simpleVar(Tr_access access, Tr_level level);
 Tr_exp Tr_subscriptVar(Tr_exp var, Tr_exp index);
 Tr_exp Tr_fieldVar(Tr_exp var, int pos);

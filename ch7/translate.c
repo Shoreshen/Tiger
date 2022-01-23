@@ -247,6 +247,13 @@ F_fragList Tr_getResult(void)
 #pragma endregion
 
 #pragma region create tree
+Tr_exp Tr_ExpList(Tr_exp head, Tr_expList tail)
+{
+    Tr_expList list = checked_malloc(sizeof(*list));
+    list->head = head;
+    list->tail = tail;
+    return list;
+}
 Tr_exp Tr_simpleVar(Tr_access access, Tr_level level)
 {
     // access:  target simpleVar
@@ -354,6 +361,26 @@ Tr_exp Tr_stringEq(Tr_exp left, Tr_exp right)
 {
     T_expList args = T_ExpList(unEx(left), T_ExpList(unEx(right), NULL));
     return Tr_Ex(F_externalCall("stringEqual", args));
+}
+Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expList args)
+{
+    // label:   function label
+    // level:   current level
+    // fun_level:  function level
+    // args:    function arguments
+    T_expList tmp_args = NULL;
+    while (args) {
+        tmp_args = T_ExpList(unEx(args->head), tmp_args);
+        args = args->tail;
+    }
+    T_exp fp = T_Temp(F_FP());
+    while (level != fun_level) {
+        // Get last(outside) fp from current fp
+        // The first parameter is static link, 
+        fp = F_Exp(Tr_formals(level)->head->access, fp);
+        level = level->parent;
+    }
+    return Tr_Ex(T_Call(T_Name(func), T_ExpList(fp, tmp_args)));
 }
 Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
 {
