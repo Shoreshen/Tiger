@@ -20,6 +20,8 @@ Temp_label Temp_newlabel(void)
 
 Temp_label Temp_namedlabel(char* name)
 {
+    // For runtime, label is the name of function
+    // no matter what level/frame currently in
     return S_Symbol(name);
 }
 

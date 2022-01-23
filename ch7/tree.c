@@ -32,15 +32,32 @@ T_stm T_Seq(T_stm left, T_stm right)
 T_stm T_Seqs(T_stm stms, ...)
 {
     va_list stm;
-    T_stm tmp, last;
+    T_stm tmp, head;
+    T_stm tail;
     va_start(stm, stms);
-    tmp = va_arg(stm, T_stm);
-    last = tmp;
-    while (tmp = va_arg(stm, T_stm)) {
-        last = T_Seq(last, tmp);
+    head = va_arg(stm, T_stm);
+    while(tmp = va_arg(stm, T_stm)) {
+        head = T_Seq(head, tmp);
     }
+    /*
+    The above code is equivalent to the following
+    Except in the following code, sub_stm is placed in right node of T_Seq
+
+    head = va_arg(stm, T_stm);
+    tail = va_arg(stm, T_stm);
+    if (!tail) {
+        va_end(stm);
+        return head;
+    }
+    head = T_Seq(head, tail);
+    tail = head;
+    while (tmp = va_arg(stm, T_stm)) {
+        tail->u.SEQ.right = T_Seq(tail->u.SEQ.right, tmp);
+        tail = tail->u.SEQ.right;
+    }
+    */
     va_end(stm);
-    return last;
+    return head;
 }
 T_stm T_Label(Temp_label lab)
 {

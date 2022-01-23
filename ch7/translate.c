@@ -2,8 +2,9 @@
 #include "frame.h"
 #include "temp.h"
 #include "tree.h"
+#include "ast.h"
 
-#pragma region internal struct
+#pragma region internal struct & statics
 typedef struct patchList_ *patchList;
 typedef struct Tr_cjx_* Tr_cjx;
 struct Tr_level_ {
@@ -36,6 +37,8 @@ struct Tr_exp_ {
         Tr_cjx cx; 
     } u;
 };
+static Tr_level out_most = NULL;
+static F_fragList fragList = NULL;
 #pragma endregion
 
 #pragma region internal function
@@ -128,7 +131,7 @@ T_exp unEx(Tr_exp e)
     }
     assert(0);
 }
-static T_stm unNx(Tr_exp e)
+T_stm unNx(Tr_exp e)
 {
     switch(e->kind) {
         case Tr_ex:
@@ -176,8 +179,6 @@ Tr_cjx unCx(Tr_exp e)
 #pragma endregion
 
 #pragma region level
-static Tr_level out_most = NULL;
-
 Tr_level Tr_outermost(void)
 {
     if (out_most == NULL) {
@@ -238,6 +239,13 @@ Temp_label Tr_name(Tr_level level)
 }
 #pragma endregion
 
+#pragma region fragment
+F_fragList Tr_getResult(void)
+{
+    return fragList;
+}
+#pragma endregion
+
 #pragma region create tree
 Tr_exp Tr_simpleVar(Tr_access access, Tr_level level)
 {
@@ -283,6 +291,69 @@ Tr_exp Tr_nilExp()
 Tr_exp Tr_intExp(int i)
 {
     return Tr_Ex(T_Const(i));
+}
+Tr_exp Tr_stringExp(char* str)
+{
+    Temp_label str_l = Temp_newlabel();
+    F_frag str_f = F_StringFrag(str_l, str);
+    fragList = F_FragList(str_f, fragList);
+    return Tr_Ex(T_Name(str_l));
+}
+Tr_exp Tr_arithExp(A_oper oper, Tr_exp left, Tr_exp right)
+{
+    T_binOp op;
+    switch (oper) {
+        case A_plusOp:
+            op = T_plus;
+            break;
+        case A_minusOp:
+            op = T_minus;
+            break;
+        case A_timesOp:
+            op = T_mul;
+            break;
+        case A_divideOp:
+            op = T_div;
+            break;
+        default:
+            assert(0);
+    }
+    return Tr_Ex(T_Binop(op, unEx(left), unEx(right)));
+}
+Tr_exp Tr_relExp(A_oper oper, Tr_exp left, Tr_exp right)
+{
+    T_relOp op;
+    switch (oper) {
+        case A_eqOp:
+            op = T_eq;
+            break;
+        case A_neqOp:
+            op = T_ne;
+            break;
+        case A_ltOp:
+            op = T_lt;
+            break;
+        case A_leOp:
+            op = T_le;
+            break;
+        case A_gtOp:
+            op = T_gt;
+            break;
+        case A_geOp:
+            op = T_ge;
+            break;
+    }
+    T_stm cjump = T_Cjump(op, unEx(left), unEx(right), NULL, NULL);
+    return Tr_Cx(
+        PatchList(&(cjump->u.CJUMP.true), NULL), 
+        PatchList(&(cjump->u.CJUMP.false), NULL), 
+        cjump
+    );
+}
+Tr_exp Tr_stringEq(Tr_exp left, Tr_exp right)
+{
+    T_expList args = T_ExpList(unEx(left), T_ExpList(unEx(right), NULL));
+    return Tr_Ex(F_externalCall("stringEqual", args));
 }
 Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
 {

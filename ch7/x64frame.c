@@ -34,6 +34,25 @@ Temp_temp F_FP() {
     return fp;
 }
 
+F_fragList F_FragList(F_frag head, F_fragList tail)
+{
+    F_fragList f = (F_fragList) checked_malloc(sizeof(*f));
+    f->head = head;
+    f->tail = tail;
+    return f;
+}
+F_frag F_StringFrag(Temp_label label, char* str)
+{
+    F_frag f = (F_frag) checked_malloc(sizeof(*f));
+    f->kind = F_stringFrag;
+    f->u.stringg.label = label;
+    f->u.stringg.str = str;
+    return f;
+}
+T_exp F_externalCall(char *s, T_expList args) {
+    return T_Call(T_Name(Temp_namedlabel(s)), args);
+}
+
 F_access InFrame(int offset)
 {
     F_access a = checked_malloc(sizeof(*a));

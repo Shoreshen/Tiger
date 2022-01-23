@@ -66,7 +66,8 @@ struct T_stm_ {
             Temp_label true, false;
         } CJUMP;
         struct {
-            T_exp dst, src;
+            T_exp dst;
+            T_exp src;
         } MOVE;
         T_exp EXP;
     } u;
@@ -85,7 +86,8 @@ struct T_exp_ {
     union {
         struct {
             T_binOp op;
-            T_exp left, right;
+            T_exp left;
+            T_exp right;
         } BINOP;
         T_exp MEM;
         Temp_temp TEMP;
