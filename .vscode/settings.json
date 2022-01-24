@@ -32,7 +32,8 @@
         "utility": "c",
         "*.tcc": "c",
         "iomanip": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "frame.h": "c"
     },
     "C_Cpp.intelliSenseEngineFallback": "Enabled"
 }

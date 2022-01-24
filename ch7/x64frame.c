@@ -24,14 +24,25 @@ T_exp F_Exp(F_access acc, T_exp framePtr) {
     }
 }
 
+static Temp_temp fp = NULL;
 Temp_temp F_FP() {
     // x86-64 architecture use rbp as frame pointer
     // it is a constant register, thus return a const Temp_temp
-    static Temp_temp fp = NULL;
     if(!fp) {
         fp = Temp_newtemp();
     }
     return fp;
+}
+
+static Temp_temp f_regs[F_KEEP] = {NULL};
+Temp_temp F_Keep_Regs(int i)
+{
+    // x86-64 architecture use rdi, rsi, rdx, rcx, r8, r9 to pass first 6 formal parameters
+    // Thus returning constant reguster number
+    if (!f_regs[i]) {
+        f_regs[i] = Temp_newtemp();
+    }
+    return f_regs[i];
 }
 
 F_fragList F_FragList(F_frag head, F_fragList tail)
@@ -50,6 +61,7 @@ F_frag F_StringFrag(Temp_label label, char* str)
     return f;
 }
 T_exp F_externalCall(char *s, T_expList args) {
+    // cdcel need to 
     return T_Call(T_Name(Temp_namedlabel(s)), args);
 }
 
@@ -88,12 +100,26 @@ F_frame F_newFrame(Temp_label name, U_boolList formals)
 
     while (formals) {
         if (f->inReg_count < F_KEEP && !(formals->head)) {
-            f->formals = F_AccessList(InReg(Temp_newtemp()), f->formals);
+            f->formals = F_AccessList(InReg(F_Keep_Regs(f->inReg_count)), f->formals);
             f->inReg_count++;
         } else {
-            f->formals = F_AccessList(InFrame(-(f->inFrame_count * F_WORD_SIZE)), f->formals);
+            /* 
+                In x64:
+                1. push formals (including rbp)
+                2. call
+                3. rsp->rbp
+                while rbp is the frame pointer:
+                ...
+                rbp -  8: first local variable
+                rbp     : return addrss
+                rbp +  8: static link
+                rbp + 16: first non-escape arg
+                ...
+            */
+            f->formals = F_AccessList(InFrame((f->inFrame_count * F_WORD_SIZE)), f->formals);
             f->inFrame_count++;
         }
+        formals = formals->tail;
     }
 
     return f;

@@ -2,7 +2,6 @@
 #include "frame.h"
 #include "temp.h"
 #include "tree.h"
-#include "ast.h"
 
 #pragma region internal struct & statics
 typedef struct patchList_ *patchList;
@@ -247,7 +246,7 @@ F_fragList Tr_getResult(void)
 #pragma endregion
 
 #pragma region create tree
-Tr_exp Tr_ExpList(Tr_exp head, Tr_expList tail)
+Tr_expList Tr_ExpList(Tr_exp head, Tr_expList tail)
 {
     Tr_expList list = checked_malloc(sizeof(*list));
     list->head = head;
@@ -468,5 +467,98 @@ Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
             );
         }
     }
+}
+Tr_exp Tr_recordExp(Tr_expList fields, int size)
+{
+    Temp_temp r = Temp_newtemp();
+    int offset = 0;
+    T_stm stm = T_Move(
+        T_Temp(r), 
+        F_externalCall(
+            "check_malloc", 
+            T_ExpList(T_Const(size * F_WORD_SIZE), NULL)
+        )
+    );
+    while(fields) {
+        stm = T_Seq(
+            stm, 
+            T_Move(
+                T_Mem(T_Binop(T_plus, T_Temp(r), T_Const(offset))), 
+                unEx(fields->head)
+            )
+        );
+        fields = fields->tail;
+        offset += F_WORD_SIZE;
+    }
+    return Tr_Ex(T_Eseq(stm, T_Temp(r)));
+}
+Tr_exp Tr_arrayExp(Tr_exp init, int size)
+{
+    Temp_temp r = Temp_newtemp();
+    return Tr_Ex(
+        T_Eseq(
+            T_Move(
+                T_Temp(r), 
+                F_externalCall(
+                    "check_malloc", 
+                    T_ExpList(T_Const(size * F_WORD_SIZE), NULL)
+                )
+            ),
+            T_Temp(r)
+        )
+    );
+}
+Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body)
+{
+    Tr_cjx cond = unCx(test);
+    Temp_label t = Temp_newlabel();
+    Temp_label f = Temp_newlabel();
+    Temp_label start = Temp_newlabel();
+    doPatch(cond->trues, t);
+    doPatch(cond->trues, f);
+
+    return Tr_Nx(
+        T_Seqs(
+            T_Label(start),
+            cond->stm,
+            T_Label(t),
+            unNx(body),
+            T_Jump(T_Name(start), Temp_LabelList(start, NULL)),
+            T_Label(f),
+            NULL
+        )
+    );
+}
+Tr_exp Tr_forExp(Tr_exp body, int hi, int lo)
+{
+    Temp_temp r = Temp_newtemp();
+    Temp_label start = Temp_newlabel();
+    T_Seqs(
+        T_Move(T_Temp(r), T_Const(lo)),
+        T_Label(start),
+        unNx(body),
+        T_Move(T_Temp(r), T_Binop(T_plus, T_Temp(r), T_Const(1))),
+        T_Cjump(T_le, T_Temp(r), T_Const(hi), start, NULL),
+        NULL
+    );
+    return NULL;
+}
+Tr_exp Tr_breakExp(Temp_label break_label)
+{
+    return Tr_Nx(T_Jump(T_Name(break_label), NULL));
+}
+Tr_exp Tr_seqExp(Tr_expList expList)
+{
+    T_stm stm = unNx(expList->head);
+    expList = expList->tail;
+    while(expList) {
+        stm = T_Seq(stm, unNx(expList->head));
+        expList = expList->tail;
+    }
+    return Tr_Nx(stm);
+}
+Tr_exp Tr_assignExp(Tr_exp lhs, Tr_exp rhs)
+{
+    return Tr_Nx(T_Move(unEx(lhs), unEx(rhs)));
 }
 #pragma endregion

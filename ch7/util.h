@@ -80,4 +80,7 @@ typedef struct Tr_level_ *Tr_level;
 // tree.h
 typedef struct T_stm_ *T_stm;
 typedef struct T_exp_ *T_exp;
+typedef struct T_expList_ *T_expList;
+// frame.h
+typedef struct F_fragList_ *F_fragList;
 #pragma endregion
