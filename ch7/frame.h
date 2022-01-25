@@ -47,6 +47,7 @@ Temp_temp F_FP();
 T_exp F_Exp(F_access acc, T_exp framePtr);
 F_fragList F_FragList(F_frag head, F_fragList tail);
 F_frag F_StringFrag(Temp_label label, char* str);
+F_frag F_ProcFrag(T_stm body, F_frame frame);
 T_exp F_externalCall(char* fun,T_expList args);
 
 extern const int F_WORD_SIZE;

@@ -500,8 +500,11 @@ Tr_exp Tr_arrayExp(Tr_exp init, int size)
             T_Move(
                 T_Temp(r), 
                 F_externalCall(
-                    "check_malloc", 
-                    T_ExpList(T_Const(size * F_WORD_SIZE), NULL)
+                    "initArray", 
+                    T_ExpList(
+                        T_Const(size * F_WORD_SIZE), // size
+                        T_ExpList(unEx(init), NULL)  // init value   
+                    )
                 )
             ),
             T_Temp(r)
@@ -512,10 +515,10 @@ Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body)
 {
     Tr_cjx cond = unCx(test);
     Temp_label t = Temp_newlabel();
-    Temp_label f = Temp_newlabel();
+    Temp_label done = Temp_newlabel();
     Temp_label start = Temp_newlabel();
     doPatch(cond->trues, t);
-    doPatch(cond->trues, f);
+    doPatch(cond->trues, done);
 
     return Tr_Nx(
         T_Seqs(
@@ -524,7 +527,7 @@ Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body)
             T_Label(t),
             unNx(body),
             T_Jump(T_Name(start), Temp_LabelList(start, NULL)),
-            T_Label(f),
+            T_Label(done),
             NULL
         )
     );
@@ -533,15 +536,19 @@ Tr_exp Tr_forExp(Tr_exp body, int hi, int lo)
 {
     Temp_temp r = Temp_newtemp();
     Temp_label start = Temp_newlabel();
-    T_Seqs(
-        T_Move(T_Temp(r), T_Const(lo)),
-        T_Label(start),
-        unNx(body),
-        T_Move(T_Temp(r), T_Binop(T_plus, T_Temp(r), T_Const(1))),
-        T_Cjump(T_le, T_Temp(r), T_Const(hi), start, NULL),
-        NULL
+    Temp_label done = Temp_newlabel();
+    
+    return Tr_Nx(
+        T_Seqs(
+            T_Move(T_Temp(r), T_Const(lo)),
+            T_Label(start),
+            unNx(body),
+            T_Move(T_Temp(r), T_Binop(T_plus, T_Temp(r), T_Const(1))),
+            T_Cjump(T_le, T_Temp(r), T_Const(hi), start, NULL),
+            T_Label(done),
+            NULL
+        )
     );
-    return NULL;
 }
 Tr_exp Tr_breakExp(Temp_label break_label)
 {
@@ -549,16 +556,23 @@ Tr_exp Tr_breakExp(Temp_label break_label)
 }
 Tr_exp Tr_seqExp(Tr_expList expList)
 {
-    T_stm stm = unNx(expList->head);
+    // At least one expression
+    T_exp seq = unEx(expList->head);
     expList = expList->tail;
+    // The expList is reversly linked, thus the first is the last expression
+    // which provide the return value
     while(expList) {
-        stm = T_Seq(stm, unNx(expList->head));
+        seq = T_Eseq(unNx(expList->head), seq);
         expList = expList->tail;
     }
-    return Tr_Nx(stm);
+    return Tr_Ex(seq);
 }
 Tr_exp Tr_assignExp(Tr_exp lhs, Tr_exp rhs)
 {
     return Tr_Nx(T_Move(unEx(lhs), unEx(rhs)));
+}
+Tr_exp Tr_seqence(Tr_exp left, Tr_exp right)
+{
+    return Tr_Nx(T_Seq(unNx(left), unNx(right)));
 }
 #pragma endregion

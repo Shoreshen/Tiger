@@ -35,6 +35,15 @@ Tr_exp Tr_relExp(A_oper oper, Tr_exp left, Tr_exp right);
 Tr_exp Tr_stringEq(Tr_exp left, Tr_exp right);
 Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expList args);
 Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee);
+Tr_exp Tr_assignExp(Tr_exp lhs, Tr_exp rhs);
+Tr_exp Tr_seqExp(Tr_expList expList);
+Tr_exp Tr_breakExp(Temp_label break_label);
+Tr_exp Tr_forExp(Tr_exp body, int hi, int lo);
+Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body);
+Tr_exp Tr_arrayExp(Tr_exp init, int size);
+Tr_exp Tr_recordExp(Tr_expList fields, int size);
+Tr_exp Tr_seqence(Tr_exp left, Tr_exp right);
+void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals);
 
 // Fragment
 F_fragList Tr_getResult(void);

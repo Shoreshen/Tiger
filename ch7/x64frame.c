@@ -34,6 +34,26 @@ Temp_temp F_FP() {
     return fp;
 }
 
+static Temp_temp sp = NULL;
+Temp_temp F_SP() {
+    // x86-64 architecture use rsp as stack pointer
+    // it is a constant register, thus return a const Temp_temp
+    if(!sp) {
+        sp = Temp_newtemp();
+    }
+    return sp;
+}
+
+static Temp_temp rv = NULL;
+Temp_temp F_RV() {
+    // x86-64 architecture use rax to store return value from function
+    // it is a constant register, thus return a const Temp_temp
+    if(!rv) {
+        rv = Temp_newtemp();
+    }
+    return rv;
+}
+
 static Temp_temp f_regs[F_KEEP] = {NULL};
 Temp_temp F_Keep_Regs(int i)
 {
@@ -58,6 +78,14 @@ F_frag F_StringFrag(Temp_label label, char* str)
     f->kind = F_stringFrag;
     f->u.stringg.label = label;
     f->u.stringg.str = str;
+    return f;
+}
+F_frag F_ProcFrag(T_stm body, F_frame frame)
+{
+    F_frag f = (F_frag) checked_malloc(sizeof(*f));
+    f->kind = F_procFrag;
+    f->u.proc.body = body;
+    f->u.proc.frame = frame;
     return f;
 }
 T_exp F_externalCall(char *s, T_expList args) {

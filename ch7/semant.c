@@ -10,18 +10,18 @@
 
 typedef struct expty_ *expty;
 struct expty_ {
-    A_exp exp;
+    Tr_exp exp;
     Ty_ty ty;
 };
 
 expty transExp(Tr_level level, E_stack venv, E_stack tenv, A_exp e);
 expty transVar(Tr_level level, E_stack venv, E_stack tenv, A_var v);
-void transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d);
+Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d);
 Ty_ty transTy (E_stack tenv, A_ty t);
 
 int inloop = 0;
 
-expty expTy(A_exp exp, Ty_ty ty) 
+expty expTy(Tr_exp exp, Ty_ty ty) 
 {
     expty et = checked_malloc(sizeof(*et));
     et->exp = exp;
@@ -322,11 +322,12 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, A_exp e)
     }
 }
 
-void transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d) 
+Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d) 
 {
     A_dec dec;
     A_decList decs = d;
     TS_node top_table = NULL;
+    Tr_exp var_inits = NULL;
     while (decs) {
         dec = decs->head;
         switch (dec->kind) {
@@ -413,7 +414,7 @@ void transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d)
     if (TS_Sort(&top_table)) {
         EM_error(&d->head->pos, "Desc->type: illegal recursive definition");
         TS_free(&top_table);
-        return;
+        return var_inits;
     }
     // Dealing with function, var declaration at last
     // Because type declaration may create loop definition or NULL name type
@@ -445,6 +446,11 @@ void transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d)
                 }
                 Tr_access ac = Tr_allocLocal(level, dec->u.var.escape);
                 S_enter(venv, dec->u.var.var, E_VarEntry(ac, init->ty));
+                if(var_inits) {
+                    var_inits = Tr_seqence(var_inits, Tr_assignExp(Tr_simpleVar(ac, level), init->exp));
+                } else {
+                    var_inits = Tr_assignExp(Tr_simpleVar(ac, level), init->exp);
+                }
                 break;
             }
             case A_typeDec: {
@@ -474,6 +480,7 @@ void transDec(Tr_level level, E_stack venv, E_stack tenv, A_decList d)
         }
         decs = decs->tail;
     }
+    return var_inits;
 }
 
 Ty_ty transTy (E_stack tenv, A_ty t)
