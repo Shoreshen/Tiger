@@ -564,5 +564,6 @@ void SEM_transProg(A_exp exp)
     // Apply base environment for value & function
     E_stack venv = E_base_venv();
 
-    transExp(Tr_outermost(), venv, tenv, NULL, exp);
+    expty main = transExp(Tr_outermost(), venv, tenv, NULL, exp);
+    Tr_print(stdout, main->exp);
 }
