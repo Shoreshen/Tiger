@@ -126,3 +126,4 @@ T_relOp T_notRel(T_relOp);  /* a op b    ==     not(a notRel(op) b)  */
 T_relOp T_commute(T_relOp); /* a op b    ==    b commute(op) a       */
 // print
 void printStmList(FILE *out, T_stmList stmList);
+void pr_stm(FILE *out, T_stm stm, int d);

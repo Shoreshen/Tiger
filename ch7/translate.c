@@ -205,12 +205,12 @@ Tr_access Tr_Access(Tr_level level, F_access access)
     return a;
 }
 
-Tr_level Tr_newLevel(Tr_level parent, Temp_label name, U_boolList formals)
+Tr_level Tr_newLevel(Tr_level parent, U_boolList formals)
 {
     Tr_level level = checked_malloc(sizeof(*level));
     level->parent = parent;
     level->formals = NULL;
-    level->frame = F_newFrame(name, U_BoolList(TRUE, formals));
+    level->frame = F_newFrame(Temp_newlabel(), U_BoolList(TRUE, formals));
 
     F_accessList tmp_formals = F_formals(level->frame);
     while (tmp_formals) {
@@ -238,10 +238,16 @@ Temp_label Tr_name(Tr_level level)
 }
 #pragma endregion
 
-#pragma region fragment
+#pragma region fragment & print
 F_fragList Tr_getResult(void)
 {
     return fragList;
+}
+void Tr_print(FILE *out, Tr_exp e)
+{
+    T_stm stm = unNx(e);
+    pr_stm(out, stm, 0);
+    F_printFrags(out, Tr_getResult());
 }
 #pragma endregion
 
@@ -278,14 +284,14 @@ Tr_exp Tr_subscriptVar(Tr_exp var, Tr_exp index)
         )
     );
 }
-Tr_exp Tr_fieldVar(Tr_exp var, int pos)
+Tr_exp Tr_fieldVar(Tr_exp var, int index)
 {
     return Tr_Ex(
         T_Mem(
             T_Binop(
                 T_plus, 
                 unEx(var), 
-                T_Const(pos * F_WORD_SIZE)
+                T_Const(index * F_WORD_SIZE)
             )
         )
     );
@@ -356,10 +362,15 @@ Tr_exp Tr_relExp(A_oper oper, Tr_exp left, Tr_exp right)
         cjump
     );
 }
-Tr_exp Tr_stringEq(Tr_exp left, Tr_exp right)
+Tr_exp Tr_stringCmp(A_oper oper, Tr_exp left, Tr_exp right)
 {
     T_expList args = T_ExpList(unEx(left), T_ExpList(unEx(right), NULL));
-    return Tr_Ex(F_externalCall("stringEqual", args));
+    T_exp res = F_externalCall("stringEqual", args);
+    if (oper == A_neqOp) {
+        return Tr_Ex(T_Binop(T_minus, T_Const(1), res));
+    } else {
+        return Tr_Ex(res);
+    }
 }
 Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expList args)
 {
@@ -368,6 +379,7 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
     // fun_level:  function level
     // args:    function arguments
     T_expList tmp_args = NULL;
+    // args is reversly constructed, thus reverse to right order
     while (args) {
         tmp_args = T_ExpList(unEx(args->head), tmp_args);
         args = args->tail;
@@ -492,7 +504,7 @@ Tr_exp Tr_recordExp(Tr_expList fields, int size)
     }
     return Tr_Ex(T_Eseq(stm, T_Temp(r)));
 }
-Tr_exp Tr_arrayExp(Tr_exp init, int size)
+Tr_exp Tr_arrayExp(Tr_exp init, Tr_exp size)
 {
     Temp_temp r = Temp_newtemp();
     return Tr_Ex(
@@ -502,7 +514,7 @@ Tr_exp Tr_arrayExp(Tr_exp init, int size)
                 F_externalCall(
                     "initArray", 
                     T_ExpList(
-                        T_Const(size * F_WORD_SIZE), // size
+                        T_Binop(T_mul, T_Const(F_WORD_SIZE), unEx(size)), // size
                         T_ExpList(unEx(init), NULL)  // init value   
                     )
                 )
@@ -511,14 +523,13 @@ Tr_exp Tr_arrayExp(Tr_exp init, int size)
         )
     );
 }
-Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body)
+Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body, Tr_exp done)
 {
     Tr_cjx cond = unCx(test);
     Temp_label t = Temp_newlabel();
-    Temp_label done = Temp_newlabel();
     Temp_label start = Temp_newlabel();
     doPatch(cond->trues, t);
-    doPatch(cond->trues, done);
+    doPatch(cond->trues, unEx(done)->u.NAME);
 
     return Tr_Nx(
         T_Seqs(
@@ -527,32 +538,35 @@ Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body)
             T_Label(t),
             unNx(body),
             T_Jump(T_Name(start), Temp_LabelList(start, NULL)),
-            T_Label(done),
+            T_Label(unEx(done)->u.NAME),
             NULL
         )
     );
 }
-Tr_exp Tr_forExp(Tr_exp body, int hi, int lo)
+Tr_exp Tr_forExp(Tr_exp body, Tr_exp lo, Tr_exp hi, Tr_exp done)
 {
     Temp_temp r = Temp_newtemp();
     Temp_label start = Temp_newlabel();
-    Temp_label done = Temp_newlabel();
-    
+
     return Tr_Nx(
         T_Seqs(
-            T_Move(T_Temp(r), T_Const(lo)),
+            T_Move(T_Temp(r), unEx(lo)),
             T_Label(start),
             unNx(body),
             T_Move(T_Temp(r), T_Binop(T_plus, T_Temp(r), T_Const(1))),
-            T_Cjump(T_le, T_Temp(r), T_Const(hi), start, NULL),
-            T_Label(done),
+            T_Cjump(T_le, T_Temp(r), unEx(hi), start, unEx(done)->u.NAME),
+            T_Label(unEx(done)->u.NAME),
             NULL
         )
     );
 }
-Tr_exp Tr_breakExp(Temp_label break_label)
+Tr_exp Tr_breakExp(Tr_exp done)
 {
-    return Tr_Nx(T_Jump(T_Name(break_label), NULL));
+    return Tr_Nx(T_Jump(unEx(done), Temp_LabelList(unEx(done)->u.NAME, NULL)));
+}
+Tr_exp Tr_doneExp()
+{
+    return Tr_Ex(T_Name(Temp_newlabel()));
 }
 Tr_exp Tr_seqExp(Tr_expList expList)
 {
@@ -574,5 +588,10 @@ Tr_exp Tr_assignExp(Tr_exp lhs, Tr_exp rhs)
 Tr_exp Tr_seqence(Tr_exp left, Tr_exp right)
 {
     return Tr_Nx(T_Seq(unNx(left), unNx(right)));
+}
+void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals)
+{
+    F_frag pfrag = F_ProcFrag(unNx(body), level->frame);
+	fragList = F_FragList(pfrag, fragList);
 }
 #pragma endregion

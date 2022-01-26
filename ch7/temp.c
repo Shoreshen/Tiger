@@ -11,6 +11,11 @@ Temp_temp Temp_newtemp(void)
     return p;
 }
 
+char* Temp_labelstring(Temp_label s)
+{
+    return S_name(s);
+}
+
 Temp_label Temp_newlabel(void)
 {
     char buf[100];

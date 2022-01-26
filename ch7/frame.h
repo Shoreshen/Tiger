@@ -44,10 +44,15 @@ F_accessList F_formals(F_frame f);
 F_access F_allocLocal(F_frame f, int escape);
 Temp_label F_name(F_frame f);
 Temp_temp F_FP();
+Temp_temp F_SP();
+Temp_temp F_RV();
+Temp_temp F_Keep_Regs(int i);
 T_exp F_Exp(F_access acc, T_exp framePtr);
 F_fragList F_FragList(F_frag head, F_fragList tail);
 F_frag F_StringFrag(Temp_label label, char* str);
 F_frag F_ProcFrag(T_stm body, F_frame frame);
 T_exp F_externalCall(char* fun,T_expList args);
+T_stm F_procEntryExit1(F_frame frame, T_stm stm);
+void F_printFrags(FILE* out, F_fragList frags);
 
 extern const int F_WORD_SIZE;

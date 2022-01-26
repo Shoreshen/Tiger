@@ -92,7 +92,26 @@ T_exp F_externalCall(char *s, T_expList args) {
     // cdcel need to 
     return T_Call(T_Name(Temp_namedlabel(s)), args);
 }
-
+T_stm F_procEntryExit1(F_frame frame, T_stm stm)
+{
+    return stm;
+}
+void F_printFrags(FILE* out, F_fragList frags)
+{
+    while(frags) {
+        switch (frags->head->kind){
+            case F_stringFrag:
+                printf("string: \n%s=%s\n", Temp_labelstring(frags->head->u.stringg.label), frags->head->u.stringg.str);
+                break;
+            case F_procFrag:
+                printf("proc: \n");
+                pr_stm(out, frags->head->u.proc.body, 0);
+                break;
+            default:
+                exit(1);
+        }
+    }
+}
 F_access InFrame(int offset)
 {
     F_access a = checked_malloc(sizeof(*a));

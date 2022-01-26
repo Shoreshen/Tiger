@@ -22,3 +22,4 @@ Temp_label Temp_newlabel(void);
 Temp_label Temp_namedlabel(char* name);
 Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t);
 Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t);
+char* Temp_labelstring(Temp_label s);
