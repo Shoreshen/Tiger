@@ -49,7 +49,7 @@ void S_beginScope(E_stack *stack)
     E_stack_push(stack);
 }
 
-void S_endScope(E_stack *stack, void (*freeVal)(void* value)) 
+void S_endScope(E_stack *stack, void (*free_entry)(void* value)) 
 {
-    E_stack_pop(stack, freeVal);
+    E_stack_pop(stack, free_entry);
 }

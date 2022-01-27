@@ -101,15 +101,17 @@ void F_printFrags(FILE* out, F_fragList frags)
     while(frags) {
         switch (frags->head->kind){
             case F_stringFrag:
-                printf("string: \n%s=%s\n", Temp_labelstring(frags->head->u.stringg.label), frags->head->u.stringg.str);
+                fprintf(out, "string: \n%s=%s\n", Temp_labelstring(frags->head->u.stringg.label), frags->head->u.stringg.str);
                 break;
             case F_procFrag:
-                printf("proc: \n");
+                fprintf(out, "proc %s: \n", Temp_labelstring(frags->head->u.proc.frame->name));
                 pr_stm(out, frags->head->u.proc.body, 0);
                 break;
             default:
                 exit(1);
         }
+        frags = frags->tail;
+        fprintf(out, "\n");
     }
 }
 F_access InFrame(int offset)
@@ -176,11 +178,11 @@ F_access F_allocLocal(F_frame f, int escape)
 {
     F_access a = NULL;
     if (escape) {
+        f->inFrame_count++;
+        a = InFrame(-(f->inFrame_count) * F_WORD_SIZE);
+    } else {
         a = InReg(Temp_newtemp());
         f->inReg_count++;
-    } else {
-        a = InFrame(-(f->inFrame_count - F_KEEP + 1) * F_WORD_SIZE);
-        f->inFrame_count++;
     }
     return a;
 }

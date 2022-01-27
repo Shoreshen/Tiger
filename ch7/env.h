@@ -29,7 +29,7 @@ struct E_stack_{
 };
 
 void E_stack_push(E_stack* stack);
-void E_stack_pop(E_stack* stack, void (*freeVal)(void* value)) ;
+void E_stack_pop(E_stack* stack, void (*free_entry)(void* value)) ;
 E_stack E_base_venv(void);
 E_stack E_base_tenv(void);
 E_stack E_empty_env(void);

@@ -247,6 +247,7 @@ void Tr_print(FILE *out, Tr_exp e)
 {
     T_stm stm = unNx(e);
     pr_stm(out, stm, 0);
+    fprintf(out, "\n");
     F_printFrags(out, Tr_getResult());
 }
 #pragma endregion
@@ -385,7 +386,7 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
         args = args->tail;
     }
     T_exp fp = T_Temp(F_FP());
-    while (level != fun_level) {
+    while (level != fun_level->parent) {
         // Get last(outside) fp from current fp
         // The first parameter is static link, 
         fp = F_Exp(Tr_formals(level)->head->access, fp);

@@ -31,15 +31,14 @@ TAB_table TAB_look(TAB_table* table, void* key)
     HASH_FIND_PTR(*table, &key, t);
     return t;
 }
-void TAB_free(TAB_table* table, void (*freeVal)(void* value))
+void TAB_free(TAB_table* table, void (*free_entry)(void* value))
 {
     TAB_table t = NULL;
     TAB_table tmp = NULL;
     HASH_ITER(hh, *table, t, tmp) {
-        if (freeVal) {
-            freeVal(t->value);
+        if (free_entry) {
+            free_entry(t);
         }
-        free(t->key);
         HASH_DEL(*table, t);
         free(t);
     }

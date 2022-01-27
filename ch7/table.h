@@ -10,5 +10,5 @@ struct TAB_table_ {
 void TAB_enter(TAB_table* table, void* key, void* value);
 void TAB_delete(TAB_table* table, void* key);
 TAB_table TAB_look(TAB_table* table, void* key);
-void TAB_free(TAB_table* table, void (*freeVal)(void* value));
+void TAB_free(TAB_table* table, void (*free_entry)(void* value));
 void TAB_dump(TAB_table* table, void (*show)(void* value));

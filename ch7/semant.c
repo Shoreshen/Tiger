@@ -229,7 +229,9 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
             Tr_expList tr_seq = NULL;
             while (seq) {
                 res = transExp(level, venv, tenv, done, seq->head);
-                tr_seq = Tr_ExpList(res->exp, tr_seq);
+                if (res->exp) {
+                    tr_seq = Tr_ExpList(res->exp, tr_seq);
+                }
                 seq = seq->tail;
             }
             if (tr_seq) {
@@ -304,6 +306,7 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
             inloop--;
             if (body->ty->kind != Ty_void) {
                 EM_error(&e->pos, "Expr->for: body must be void type");
+                exit(1);
             }
             S_endScope(&venv, NULL);
             return expTy(Tr_forExp(body->exp, lo->exp, hi->exp, new_done), Ty_Void());
@@ -317,14 +320,19 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
         case A_letExp: {
             A_decList decs = e->u.let.decs;
             expty body;
+            Tr_expList seqs;
             S_beginScope(&venv);
             S_beginScope(&tenv);
             Tr_exp tr_decs = transDec(level, venv, tenv, done, decs);
             body = transExp(level, venv, tenv, done, e->u.let.body);
             S_endScope(&tenv, NULL);
             S_endScope(&venv, NULL);
-            Tr_expList seqs = Tr_ExpList(body->exp, Tr_ExpList(tr_decs, NULL));
-            return expTy(Tr_seqExp(seqs), body->ty);
+            if (tr_decs) {
+                Tr_expList seqs = Tr_ExpList(body->exp, Tr_ExpList(tr_decs, NULL));
+                return expTy(Tr_seqExp(seqs), body->ty);
+            } else {
+                return body;
+            }
         }
         case A_arrayExp: {
             Ty_ty ty = S_look(tenv, e->u.array.typ);
@@ -368,7 +376,7 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                 // Check redefinition
                 if (S_look(tenv, dec->u.type->name)) {
                     EM_error(&dec->pos, "Desc->type: redefined type %s", S_name(dec->u.type->name));
-                    break;
+                    exit(1);
                 }
                 S_enter(tenv, dec->u.type->name, Ty_Name(dec->u.type->name, NULL));
                 break;
@@ -377,7 +385,7 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                 // Check redefinition
                 if (S_look(venv, dec->u.function->name)) {
                     EM_error(&dec->pos, "Desc->func: redefined function %s", S_name(dec->u.function->name));
-                    break;
+                    exit(1);
                 }
                 // Check return type
                 Ty_ty result = NULL;
@@ -385,7 +393,7 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                     result = S_look(tenv, dec->u.function->result);
                     if (!result) {
                         EM_error(&dec->pos, "Desc->func: undefined type %s", S_name(dec->u.function->result));
-                        break;
+                        exit(1);
                     }
                 } else {
                     result = Ty_Void();
@@ -401,7 +409,7 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                     param_ty = S_look(tenv, params->head->typ);
                     if (!param_ty) {
                         EM_error(&dec->pos, "Desc->func: undefined type %s", S_name(params->head->typ));
-                        break;
+                        exit(1);
                     }
                     if (params_head) {
                         params_tail->tail = Ty_TyList(param_ty, NULL);
@@ -444,7 +452,7 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
     if (TS_Sort(&top_table)) {
         EM_error(&d->head->pos, "Desc->type: illegal recursive definition");
         TS_free(&top_table);
-        return var_inits;
+        exit(1);
     }
     // Dealing with function, var declaration at last
     // Because type declaration may create loop definition or NULL name type
@@ -459,19 +467,19 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                     dec_ty = S_look(tenv, dec->u.var.typ);
                     if (!dec_ty) {
                         EM_error(&dec->pos, "Desc->var: undefined type %s", S_name(dec->u.var.typ));
-                        break;
+                        exit(1);
                     }
                 }
                 expty init = transExp(level, venv, tenv, done, dec->u.var.init);
                 if (dec_ty) {
                     if (!actual_eq(init->ty, dec_ty)) {
                         EM_error(&dec->pos, "Desc->var: initialize type does not match with given type");
-                        break;
+                        exit(1);
                     }
                 } else {
                     if (init->ty->kind == Ty_nil) {
                         EM_error(&dec->pos, "Desc->var: variable declare: illegal nil type: nil must be assign to a explictly record type");
-                        break;
+                        exit(1);
                     }
                 }
                 Tr_access ac = Tr_allocLocal(level, dec->u.var.escape);
@@ -492,7 +500,7 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                 // Enter parameters
                 Ty_tyList params_tl = fun_entry->u.fun.formals;
                 A_fieldList params_fl = dec->u.function->params;
-                Tr_accessList ac_list = Tr_formals(fun_entry->u.fun.level);
+                Tr_accessList ac_list = Tr_formals(fun_entry->u.fun.level)->tail; // First is fp
                 while (params_fl) {
                     S_enter(venv, params_fl->head->name, E_VarEntry(ac_list->head, params_tl->head));
                     params_tl = params_tl->tail;
@@ -500,10 +508,12 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                     ac_list = ac_list->tail;
                 }
                 // Check function body type with return type
-                expty body = transExp(level, venv, tenv, done, dec->u.function->body);
+                expty body = transExp(fun_entry->u.fun.level, venv, tenv, done, dec->u.function->body);
                 if (!actual_eq(body->ty, fun_entry->u.fun.result)) {
                     EM_error(&dec->pos, "Desc->func: function body type does not match with return type");
+                    exit(1);
                 }
+                Tr_procEntryExit(fun_entry->u.fun.level, body->exp, Tr_formals(fun_entry->u.fun.level));
                 S_endScope(&venv, NULL);
                 break;
             }
@@ -520,7 +530,7 @@ Ty_ty transTy (E_stack tenv, A_ty t)
             Ty_ty ty = S_look(tenv, t->u.name);
             if (!ty) {
                 EM_error(&t->pos, "ty->name: undefined type %s", S_name(t->u.name));
-                return Ty_Int();
+                exit(1);
             }
             return ty;
         }
@@ -533,7 +543,7 @@ Ty_ty transTy (E_stack tenv, A_ty t)
                 ty = S_look(tenv, fields->head->typ);
                 if (!ty) {
                     EM_error(&t->pos, "ty->record: undefined type %s", S_name(fields->head->typ));
-                    return Ty_Int();
+                    exit(1);
                 }
                 if (fields_head) {
                     fields_tail->tail = Ty_FieldList(Ty_Field(fields->head->name, ty), NULL);
@@ -550,7 +560,7 @@ Ty_ty transTy (E_stack tenv, A_ty t)
             Ty_ty ty = S_look(tenv, t->u.array);
             if (!ty) {
                 EM_error(&t->pos, "ty->array: undefined type %s", S_name(t->u.array));
-                return Ty_Int();
+                exit(1);
             }
             return Ty_Array(ty);
         }

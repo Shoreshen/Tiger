@@ -124,23 +124,25 @@ void traverseDec(E_stack env, int depth, A_decList d)
         switch (d->head->kind) {
             case A_varDec: {
                 traverseExp(env, depth, d->head->u.var.init);
+                d->head->u.var.escape = FALSE;
                 insertEscape(env, d->head->u.var.var, EscapeEntry(depth, &(d->head->u.var.escape)));
-                return;
+                break;
             }
             case A_typeDec: {
-                return;
+                break;
             }
             case A_functionDec: {
                 A_fundec funcs = d->head->u.function;
                 S_beginScope(&env);
                 A_fieldList params = funcs->params;
                 while (params) {
+                    params->head->escape = FALSE;
                     insertEscape(env, params->head->name, EscapeEntry(depth + 1, &(params->head->escape)));
                     params = params->tail;
                 }
                 traverseExp(env, depth + 1, funcs->body);
                 S_endScope(&env, NULL);
-                return;
+                break;
             }
         }
         d = d->tail;
@@ -155,7 +157,7 @@ void traverseVar(E_stack env, int depth, A_var v)
                 EM_error(0, "ESC: Undefined variable: %s", S_name(v->u.simple));
                 return;
             }
-            if (entry->depth < depth) {
+            if (entry->depth < depth && (!entry->escape == FALSE)) {
                 *(entry->escape) = TRUE;
             }
             return;

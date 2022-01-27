@@ -34,8 +34,8 @@ T_stm T_Seqs(T_stm stms, ...)
     va_list stm;
     T_stm tmp, head;
     T_stm tail;
+    head = stms;
     va_start(stm, stms);
-    head = va_arg(stm, T_stm);
     while(tmp = va_arg(stm, T_stm)) {
         head = T_Seq(head, tmp);
     }
@@ -43,7 +43,6 @@ T_stm T_Seqs(T_stm stms, ...)
     The above code is equivalent to the following
     Except in the following code, sub_stm is placed in right node of T_Seq
 
-    head = va_arg(stm, T_stm);
     tail = va_arg(stm, T_stm);
     if (!tail) {
         va_end(stm);
@@ -172,6 +171,8 @@ void pr_stm(FILE *out, T_stm stm, int d)
             pr_stm(out, stm->u.SEQ.left, d + 1);
             fprintf(out, ",\n");
             pr_stm(out, stm->u.SEQ.right, d + 1);
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         case T_LABEL:
@@ -182,6 +183,8 @@ void pr_stm(FILE *out, T_stm stm, int d)
             indent(out, d);
             fprintf(out, "JUMP(\n");
             pr_tree_exp(out, stm->u.JUMP.exp, d + 1);
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         case T_CJUMP:
@@ -194,6 +197,8 @@ void pr_stm(FILE *out, T_stm stm, int d)
             indent(out, d + 1);
             fprintf(out, "%s,", S_name(stm->u.CJUMP.true));
             fprintf(out, "%s", S_name(stm->u.CJUMP.false));
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         case T_MOVE:
@@ -202,12 +207,16 @@ void pr_stm(FILE *out, T_stm stm, int d)
             pr_tree_exp(out, stm->u.MOVE.dst, d + 1);
             fprintf(out, ",\n");
             pr_tree_exp(out, stm->u.MOVE.src, d + 1);
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         case T_EXP:
             indent(out, d);
             fprintf(out, "EXP(\n");
             pr_tree_exp(out, stm->u.EXP, d + 1);
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
     }
@@ -222,6 +231,8 @@ void pr_tree_exp(FILE *out, T_exp exp, int d)
             pr_tree_exp(out, exp->u.BINOP.left, d + 1);
             fprintf(out, ",\n");
             pr_tree_exp(out, exp->u.BINOP.right, d + 1);
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         case T_MEM:
@@ -229,11 +240,13 @@ void pr_tree_exp(FILE *out, T_exp exp, int d)
             fprintf(out, "MEM");
             fprintf(out, "(\n");
             pr_tree_exp(out, exp->u.MEM, d + 1);
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         case T_TEMP:
             indent(out, d);
-            fprintf(out, "TEMP t%s",exp->u.TEMP->num);
+            fprintf(out, "TEMP t%d",exp->u.TEMP->num);
             break;
         case T_ESEQ:
             indent(out, d);
@@ -241,6 +254,8 @@ void pr_tree_exp(FILE *out, T_exp exp, int d)
             pr_stm(out, exp->u.ESEQ.stm, d + 1);
             fprintf(out, ",\n");
             pr_tree_exp(out, exp->u.ESEQ.exp, d + 1);
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         case T_NAME:
@@ -259,8 +274,10 @@ void pr_tree_exp(FILE *out, T_exp exp, int d)
             for (; args; args = args->tail)
             {
                 fprintf(out, ",\n");
-                pr_tree_exp(out, args->head, d + 2);
+                pr_tree_exp(out, args->head, d + 1);
             }
+            fprintf(out, "\n");
+            indent(out, d);
             fprintf(out, ")");
             break;
         }

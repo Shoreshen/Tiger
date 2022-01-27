@@ -19,8 +19,11 @@ char* Temp_labelstring(Temp_label s)
 Temp_label Temp_newlabel(void)
 {
     char buf[100];
+    char *heap_str;
     sprintf(&buf[0], "L%d", labels++);
-    return Temp_namedlabel(buf);
+    heap_str = checked_malloc(strlen(&buf[0]) + 1);
+    strcpy(heap_str, &buf[0]);
+    return Temp_namedlabel(heap_str);
 }
 
 Temp_label Temp_namedlabel(char* name)

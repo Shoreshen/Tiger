@@ -100,11 +100,11 @@
             ]
         },
         {
-            "name": "ch6",
+            "name": "ch7",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/ch6.out",
-            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/test16.tig"],
+            "program": "${workspaceFolder}/ch7.out",
+            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/test4.tig"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
