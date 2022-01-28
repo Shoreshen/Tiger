@@ -74,7 +74,7 @@ E_stack E_base_venv(void)
             Tr_outermost(),
             Temp_newlabel(),
             Ty_TyList(Ty_Int(), NULL), 
-            Ty_Int()
+            Ty_String()
         )
     );
     TAB_enter(&venv->table, S_Symbol("size"), 

@@ -21,16 +21,6 @@ escapeEntry EscapeEntry(int depth, int* escape) {
     return e;
 }
 
-void insertEscape(E_stack stack, S_symbol key, escapeEntry entry)
-{
-    if (!S_look(stack, key)) {
-        *(entry->escape) = FALSE;
-        S_enter(stack, key, entry);
-    } else {
-        EM_error(0, "ESC: Duplicate symbol: %s", S_name(key));
-    }
-}
-
 void Esc_findEscape(A_exp exp)
 {
     E_stack env = E_empty_env();
@@ -96,7 +86,7 @@ void traverseExp(E_stack env, int depth, A_exp e)
             traverseExp(env, depth, e->u.forr.hi);
             S_beginScope(&env);
             e->u.forr.escape = FALSE;
-            insertEscape(env, e->u.forr.var, EscapeEntry(depth, &(e->u.forr.escape)));
+            S_enter(env, e->u.forr.var, EscapeEntry(depth, &(e->u.forr.escape)));
             traverseExp(env, depth, e->u.forr.body);
             S_endScope(&env, NULL);
             return;
@@ -125,7 +115,7 @@ void traverseDec(E_stack env, int depth, A_decList d)
             case A_varDec: {
                 traverseExp(env, depth, d->head->u.var.init);
                 d->head->u.var.escape = FALSE;
-                insertEscape(env, d->head->u.var.var, EscapeEntry(depth, &(d->head->u.var.escape)));
+                S_enter(env, d->head->u.var.var, EscapeEntry(depth, &(d->head->u.var.escape)));
                 break;
             }
             case A_typeDec: {
@@ -137,7 +127,7 @@ void traverseDec(E_stack env, int depth, A_decList d)
                 A_fieldList params = funcs->params;
                 while (params) {
                     params->head->escape = FALSE;
-                    insertEscape(env, params->head->name, EscapeEntry(depth + 1, &(params->head->escape)));
+                    S_enter(env, params->head->name, EscapeEntry(depth + 1, &(params->head->escape)));
                     params = params->tail;
                 }
                 traverseExp(env, depth + 1, funcs->body);

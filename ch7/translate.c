@@ -363,6 +363,46 @@ Tr_exp Tr_relExp(A_oper oper, Tr_exp left, Tr_exp right)
         cjump
     );
 }
+Tr_exp Tr_logicExp(A_oper oper, Tr_exp left, Tr_exp right)
+{
+    Tr_cjx cjl = unCx(left);
+    Tr_cjx cjr = unCx(right);
+    Temp_label z = Temp_newlabel();
+    if (oper == A_andOp) {
+        doPatch(cjl->trues, z);
+        patchList new_f = joinPatch(cjl->falses, cjr->falses);
+        return Tr_Cx(cjr->trues, new_f,
+            T_Seqs(
+                // If true, Jump to label "z", then evaluate cjr->stm
+                // If false, jump to joined new_f, which will be filled later
+                cjl->stm,
+                T_Label(z),
+                // If true, jump to cjr->trues
+                // If false, jump to joined new_f
+                // Both will be filled
+                cjl->stm, 
+                NULL
+            )
+        );
+    } else if (oper == A_orOp) {
+        doPatch(cjl->falses, z);
+        patchList new_t = joinPatch(cjl->trues, cjr->trues);
+        return Tr_Cx(new_t, cjr->falses,
+            T_Seqs(
+                // If true, jump to joined new_t, which will be filled later
+                // If false, jump to label "z", then evaluate cjr->stm
+                cjl->stm,
+                T_Label(z),
+                // If true, jump to joined new_t
+                // If false, jump to cjr->falses
+                // Both will be filled
+                cjl->stm, 
+                NULL
+            )
+        );
+    }
+    return NULL;
+}
 Tr_exp Tr_stringCmp(A_oper oper, Tr_exp left, Tr_exp right)
 {
     T_expList args = T_ExpList(unEx(left), T_ExpList(unEx(right), NULL));
@@ -384,6 +424,11 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
     while (args) {
         tmp_args = T_ExpList(unEx(args->head), tmp_args);
         args = args->tail;
+    }
+    // Function level is outer level of current level
+    // indicating a external function call
+    if (!fun_level->parent) {
+        return Tr_Ex(F_externalCall(Temp_labelstring(func), tmp_args));
     }
     T_exp fp = T_Temp(F_FP());
     while (level != fun_level->parent) {
@@ -416,23 +461,6 @@ Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
                     T_Label(f),
                     elsee->u.nx,
                     T_Label(join),
-                    NULL
-                )
-            );
-        } else if (then->kind == Tr_cx && elsee->kind == Tr_cx) {
-            // Both then and else are cx
-            patchList new_t = joinPatch(then->u.cx->trues, elsee->u.cx->trues);
-            patchList new_f = joinPatch(then->u.cx->falses, elsee->u.cx->falses);
-            return Tr_Cx(new_t, new_f,
-                T_Seqs(
-                    cond->stm, // Jump to label "t" if cond is true, label "f" if cond is false
-                    T_Label(t),
-                    // Jump to label "new_t" or "new_f", which will be filled later
-                    // Thus no need to add further jump (e.g to label "join") 
-                    then->u.cx->stm, 
-                    T_Label(f),
-                    // Same as above
-                    elsee->u.cx->stm,
                     NULL
                 )
             );
@@ -530,7 +558,7 @@ Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body, Tr_exp done)
     Temp_label t = Temp_newlabel();
     Temp_label start = Temp_newlabel();
     doPatch(cond->trues, t);
-    doPatch(cond->trues, unEx(done)->u.NAME);
+    doPatch(cond->falses, unEx(done)->u.NAME);
 
     return Tr_Nx(
         T_Seqs(
@@ -544,18 +572,19 @@ Tr_exp Tr_whileExp(Tr_exp test, Tr_exp body, Tr_exp done)
         )
     );
 }
-Tr_exp Tr_forExp(Tr_exp body, Tr_exp lo, Tr_exp hi, Tr_exp done)
+Tr_exp Tr_forExp(Tr_exp body, Tr_access i, Tr_exp lo, Tr_exp hi, Tr_exp done)
 {
     Temp_temp r = Temp_newtemp();
     Temp_label start = Temp_newlabel();
-
+    // Looping variable must in the same level with for expression
+    T_exp lo_var = F_Exp(i->access, NULL);
     return Tr_Nx(
         T_Seqs(
-            T_Move(T_Temp(r), unEx(lo)),
+            T_Move(lo_var, unEx(lo)),
             T_Label(start),
             unNx(body),
-            T_Move(T_Temp(r), T_Binop(T_plus, T_Temp(r), T_Const(1))),
-            T_Cjump(T_le, T_Temp(r), unEx(hi), start, unEx(done)->u.NAME),
+            T_Move(lo_var, T_Binop(T_plus, lo_var, T_Const(1))),
+            T_Cjump(T_le, lo_var, unEx(hi), start, unEx(done)->u.NAME),
             T_Label(unEx(done)->u.NAME),
             NULL
         )

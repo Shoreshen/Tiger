@@ -64,6 +64,6 @@ void indent(FILE *out, int d)
 {
     int i;
     for (i = 0; i < d; i++) {
-        fprintf(out, "    ");
+        fprintf(out, "  ");
     }
 }

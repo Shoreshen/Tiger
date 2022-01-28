@@ -180,6 +180,13 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
                 } else {
                     return expTy(Tr_relExp(e->u.op.oper, left->exp, right->exp), Ty_Int());
                 }
+            } else if (e->u.op.oper == A_andOp || e->u.op.oper == A_orOp) {
+                if (left->ty->kind != Ty_int || right->ty->kind != Ty_int) {
+                    EM_error(&e->pos, "Expr->op: integer required");
+                    exit(1);
+                } else {
+                    return expTy(Tr_logicExp(e->u.op.oper, left->exp, right->exp), Ty_Int());
+                }
             } else {
                 EM_error(&e->pos, "Expr->op: not recorgnized operator");
                 exit(1);
@@ -309,7 +316,7 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
                 exit(1);
             }
             S_endScope(&venv, NULL);
-            return expTy(Tr_forExp(body->exp, lo->exp, hi->exp, new_done), Ty_Void());
+            return expTy(Tr_forExp(body->exp, ac, lo->exp, hi->exp, new_done), Ty_Void());
         }
         case A_breakExp: {
             if (inloop == 0) {

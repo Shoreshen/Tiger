@@ -104,7 +104,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/ch7.out",
-            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/test4.tig"],
+            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/queens.tig"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
