@@ -380,7 +380,7 @@ Tr_exp Tr_logicExp(A_oper oper, Tr_exp left, Tr_exp right)
                 // If true, jump to cjr->trues
                 // If false, jump to joined new_f
                 // Both will be filled
-                cjl->stm, 
+                cjr->stm, 
                 NULL
             )
         );
@@ -396,7 +396,7 @@ Tr_exp Tr_logicExp(A_oper oper, Tr_exp left, Tr_exp right)
                 // If true, jump to joined new_t
                 // If false, jump to cjr->falses
                 // Both will be filled
-                cjl->stm, 
+                cjr->stm, 
                 NULL
             )
         );

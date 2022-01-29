@@ -178,8 +178,8 @@ F_access F_allocLocal(F_frame f, int escape)
 {
     F_access a = NULL;
     if (escape) {
-        f->inFrame_count++;
         a = InFrame(-(f->inFrame_count) * F_WORD_SIZE);
+        f->inFrame_count++;
     } else {
         a = InReg(Temp_newtemp());
         f->inReg_count++;
