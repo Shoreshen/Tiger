@@ -2,8 +2,6 @@
 
 #include "util.h"
 
-typedef struct T_stmList_ *T_stmList;
-
 struct T_expList_ {
     T_exp head;
     T_expList tail;

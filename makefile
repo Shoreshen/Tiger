@@ -91,13 +91,14 @@ run_ch8:ch8.out
 	./$< $$file
 # Clean =========================================================================================
 clean:
-	-rm *.out
-	-rm ./ch2/*.yy.c
-	-rm ./ch3/*.yy.c ./ch3/*.tab.*
-	-rm ./ch4/*.yy.c ./ch4/*.tab.*
-	-rm ./ch5/*.yy.c ./ch5/*.tab.*
-	-rm ./ch6/*.yy.c ./ch6/*.tab.*
-	-rm ./ch7/*.yy.c ./ch7/*.tab.*
+	-rm *.out \
+	    ./ch2/*.yy.c \
+	    ./ch3/*.yy.c ./ch3/*.tab.* \
+	    ./ch4/*.yy.c ./ch4/*.tab.* \
+	    ./ch5/*.yy.c ./ch5/*.tab.* \
+	    ./ch6/*.yy.c ./ch6/*.tab.* \
+	    ./ch7/*.yy.c ./ch7/*.tab.* \
+	    ./ch8/*.yy.c ./ch8/*.tab.*
 PHONY += clean
 # GitHub ========================================================================================
 sub_pull:

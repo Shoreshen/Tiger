@@ -1,13 +1,8 @@
-/*
- * canon.c - Functions to convert the IR trees into basic blocks and traces.
- *
- */
-#include <stdio.h>
-#include "util.h"
 #include "symbol.h"
 #include "temp.h"
 #include "tree.h"
 #include "canon.h"
+#include "env.h"
 
 typedef struct expRefList_ *expRefList;
 struct expRefList_ {
@@ -16,12 +11,12 @@ struct expRefList_ {
 };
 
 /* local function prototypes */
-static T_stm do_stm(T_stm stm);
-static struct stmExp do_exp(T_exp exp);
-static C_stmListList mkBlocks(T_stmList stms, Temp_label done);
-static T_stmList getNext(void);
+T_stm do_stm(T_stm stm);
+struct stmExp do_exp(T_exp exp);
+C_stmListList mkBlocks(T_stmList stms, Temp_label done);
+T_stmList getNext(void);
 
-static expRefList ExpRefList(T_exp *head, expRefList tail)
+expRefList ExpRefList(T_exp *head, expRefList tail)
 {
     expRefList p = (expRefList)checked_malloc(sizeof *p);
     p->head = head;
@@ -29,12 +24,12 @@ static expRefList ExpRefList(T_exp *head, expRefList tail)
     return p;
 }
 
-static int isNop(T_stm x)
+int isNop(T_stm x)
 {
-    return x->kind == T_EXP && x->u.EXP->kind == T_CONST;
+    return x == NULL || (x->kind == T_EXP && x->u.EXP->kind == T_CONST);
 }
 
-static T_stm seq(T_stm x, T_stm y)
+T_stm seq(T_stm x, T_stm y)
 {
     if (isNop(x)) {
         return y;
@@ -45,15 +40,11 @@ static T_stm seq(T_stm x, T_stm y)
     return T_Seq(x, y);
 }
 
-static int commute(T_stm x, T_exp y)
+int commute(T_stm x, T_exp y)
 {
-    if (isNop(x)) {
-        return TRUE;
-    }
-    if (y->kind == T_NAME || y->kind == T_CONST) {
-        return TRUE;
-    }
-    return FALSE;
+    // T_NAME in expression returns the address of that assembly lable
+    // it is a constant
+    return isNop(x) || y->kind == T_CONST || y->kind == T_NAME;
 }
 
 struct stmExp {
@@ -61,17 +52,13 @@ struct stmExp {
     T_exp e;
 };
 
-static T_stm reorder(expRefList rlist)
+T_stm reorder(expRefList rlist)
 {
-    if (!rlist) {
-        return T_Exp(T_Const(0)); /* nop */
-    } else if ((*rlist->head)->kind == T_CALL){
-        Temp_temp t = Temp_newtemp();
-        *rlist->head = T_Eseq(T_Move(T_Temp(t), *rlist->head), T_Temp(t));
-        return reorder(rlist);
+    if (rlist == NULL) {
+        return NULL; /* nop */
     } else {
-        struct stmExp hd = do_exp(*rlist->head);
         T_stm s = reorder(rlist->tail);
+        struct stmExp hd = do_exp(*rlist->head);
         if (commute(s, hd.e)) {
             *rlist->head = hd.e;
             return seq(hd.s, s);
@@ -83,18 +70,19 @@ static T_stm reorder(expRefList rlist)
     }
 }
 
-static expRefList get_call_rlist(T_exp exp)
+expRefList get_call_rlist(T_exp exp)
 {
     expRefList rlist, curr;
     T_expList args = exp->u.CALL.args;
-    curr = rlist = ExpRefList(&exp->u.CALL.fun, NULL);
+    rlist = ExpRefList(&exp->u.CALL.fun, NULL);
+    curr = rlist;
     for (; args; args = args->tail) {
         curr = curr->tail = ExpRefList(&args->head, NULL);
     }
     return rlist;
 }
 
-static struct stmExp StmExp(T_stm stm, T_exp exp)
+struct stmExp StmExp(T_stm stm, T_exp exp)
 {
     struct stmExp x;
     x.s = stm;
@@ -102,99 +90,131 @@ static struct stmExp StmExp(T_stm stm, T_exp exp)
     return x;
 }
 
-static struct stmExp do_exp(T_exp exp)
+struct stmExp do_exp(T_exp exp)
 {
-    switch (exp->kind) { 
-        case T_BINOP:
-            return StmExp(
-                reorder(ExpRefList(&exp->u.BINOP.left, ExpRefList(&exp->u.BINOP.right, NULL))),
-                exp
-            );
-        case T_MEM:
-            return StmExp(
-                reorder(ExpRefList(&exp->u.MEM, NULL)), 
-                exp
-            );
-        case T_ESEQ: {
-            struct stmExp x = do_exp(exp->u.ESEQ.exp);
-            return StmExp(
-                seq(do_stm(exp->u.ESEQ.stm), x.s), 
-                x.e
-            );
+    // return `exp` equivalents, that is 
+    //      1. first exectue `do_exp(exp).s` 
+    //      2. then `do_exp(exp).e` will result in the same value
+    switch (exp->kind) {
+        case T_CONST:
+        case T_NAME:
+        case T_TEMP: 
+            return (struct stmExp) {
+                .s = NULL,
+                .e = exp
+            };
+        case T_MEM: {
+            struct stmExp ret = do_exp(exp->u.MEM);
+            exp->u.MEM = ret.e;
+            ret.e = exp;
+            return ret;
         }
-        case T_CALL:
-            return StmExp(reorder(get_call_rlist(exp)), exp);
+        case T_ESEQ: {
+            T_stm s = do_stm(exp->u.ESEQ.stm);
+            struct stmExp ret = do_exp(exp->u.ESEQ.exp);
+            ret.s = seq(s, ret.s);
+            return ret;
+        }
+        case T_CALL: {
+            T_stm s = reorder(get_call_rlist(exp));
+            // For case like `T_Binop(PLUS, T_Call(), T_Call())`
+            // The latter call exp will re-write the RV result from formar call
+            // Thus must save it in an temprary reg
+            Temp_temp t = Temp_newtemp();
+            s = seq(
+                s,
+                T_Move(T_Temp(t), exp)
+            );
+            return (struct stmExp) {
+                .s = s,
+                .e = T_Temp(t)
+            };
+        }
+        case T_BINOP:
+            return (struct stmExp) {
+                .s = reorder(ExpRefList(&exp->u.BINOP.left, ExpRefList(&exp->u.BINOP.right, NULL))),
+                .e = exp
+            };
         default:
-            return StmExp(reorder(NULL), exp);
+            assert(0);
     }
 }
 
-/* processes stm so that it contains no ESEQ nodes */
-static T_stm do_stm(T_stm stm)
+T_stm do_stm(T_stm stm)
 {
-    switch (stm->kind)
-    {
-    case T_SEQ:
-        return seq(
-            do_stm(stm->u.SEQ.left), 
-            do_stm(stm->u.SEQ.right)
-        );
-    case T_JUMP:
-        return seq(
-            reorder(ExpRefList(&stm->u.JUMP.exp, NULL)), 
-            stm
-        );
-    case T_CJUMP:
-        return seq(
-            reorder(ExpRefList(&stm->u.CJUMP.left, ExpRefList(&stm->u.CJUMP.right, NULL))),
-            stm
-        );
-    case T_MOVE:
-        if (stm->u.MOVE.dst->kind == T_TEMP && stm->u.MOVE.src->kind == T_CALL) {
+    switch (stm->kind) {
+        case T_SEQ:
             return seq(
-                reorder(get_call_rlist(stm->u.MOVE.src)), 
-                stm
+                do_stm(stm->u.SEQ.left), 
+                do_stm(stm->u.SEQ.right)
             );
-        } else if (stm->u.MOVE.dst->kind == T_TEMP) {
-            return seq(
-                reorder(ExpRefList(&stm->u.MOVE.src, NULL)), 
-                stm
-            );
-        } else if (stm->u.MOVE.dst->kind == T_MEM) {
-            return seq(
-                reorder(ExpRefList(&stm->u.MOVE.dst->u.MEM, ExpRefList(&stm->u.MOVE.src, NULL))),
-                stm
-            );
-        } else if (stm->u.MOVE.dst->kind == T_ESEQ) {
-            T_stm s = stm->u.MOVE.dst->u.ESEQ.stm;
-            stm->u.MOVE.dst = stm->u.MOVE.dst->u.ESEQ.exp;
-            return do_stm(T_Seq(s, stm));
+        case T_JUMP:{
+            struct stmExp ret = do_exp(stm->u.JUMP.exp);
+            stm->u.JUMP.exp = ret.e;
+            return seq(ret.s, stm);
         }
-        assert(0); /* dst should be temp or mem only */
-    case T_EXP:
-        if (stm->u.EXP->kind == T_CALL) {
+        case T_CJUMP:
             return seq(
-                reorder(get_call_rlist(stm->u.EXP)), 
+                reorder(ExpRefList(&stm->u.CJUMP.left, ExpRefList(&stm->u.CJUMP.right, NULL))),
                 stm
             );
-        } else {
-            return seq(
-                reorder(ExpRefList(&stm->u.EXP, NULL)), 
-                stm
-            );
-        }
-    default:
-        return stm;
+        case T_MOVE:
+            // If left is T_TEMP, it will be written by the right anyway ,thus trivial
+            if (stm->u.MOVE.dst->kind == T_TEMP && stm->u.MOVE.src->kind == T_CALL) {
+                // Though T_Call() will effect RV
+                // but in this case T_Temp() will not commute with RV
+                return seq(
+                    reorder(get_call_rlist(stm->u.MOVE.src)), 
+                    stm
+                );
+            } else if (stm->u.MOVE.dst->kind == T_TEMP) {
+                return seq(
+                    reorder(ExpRefList(&stm->u.MOVE.src, NULL)), 
+                    stm
+                );
+            } else if (stm->u.MOVE.dst->kind == T_MEM) {
+                return seq(
+                    reorder(ExpRefList(&stm->u.MOVE.dst->u.MEM, ExpRefList(&stm->u.MOVE.src, NULL))),
+                    stm
+                );
+            } else if (stm->u.MOVE.dst->kind == T_ESEQ) {
+                // It is equivalent for the following:
+                //      1. T_Move(T_Eseq(stm, exp1), exp2)
+                //      2. T_Seq(stm, T_Move(exp1, exp2))
+                T_stm s = stm->u.MOVE.dst->u.ESEQ.stm;
+                stm->u.MOVE.dst = stm->u.MOVE.dst->u.ESEQ.exp;
+                return do_stm(T_Seq(s, stm));
+            }
+            // Only lvalue can be assigned, which all will be T_MEM or T_TEMP
+            assert(0); /* dst should be temp or mem only */
+        case T_EXP:
+            if (stm->u.EXP->kind == T_CALL) {
+                return seq(
+                    reorder(get_call_rlist(stm->u.EXP)), 
+                    stm
+                );
+            } else {
+                return seq(
+                    reorder(ExpRefList(&stm->u.EXP, NULL)), 
+                    stm
+                );
+            }
+        case T_LABEL:
+            return stm;
+        default:
+            assert(0);
     }
 }
 
 /* linear gets rid of the top-level SEQ's, producing a list */
-static T_stmList linear(T_stm stm, T_stmList right)
+T_stmList linear(T_stm stm, T_stmList right)
 {
-    if (stm->kind == T_SEQ)
+    if (stm->kind == T_SEQ) {
         return linear(stm->u.SEQ.left, linear(stm->u.SEQ.right, right));
-    else
+    }
+    else {
         return T_StmList(stm, right);
+    }
 }
 
 /* From an arbitrary Tree statement, produce a list of cleaned trees
@@ -206,7 +226,7 @@ T_stmList C_linearize(T_stm stm)
     return linear(do_stm(stm), NULL);
 }
 
-static C_stmListList StmListList(T_stmList head, C_stmListList tail)
+C_stmListList StmListList(T_stmList head, C_stmListList tail)
 {
     C_stmListList p = (C_stmListList)checked_malloc(sizeof *p);
     p->head = head;
@@ -215,7 +235,7 @@ static C_stmListList StmListList(T_stmList head, C_stmListList tail)
 }
 
 /* Go down a list looking for end of basic block */
-static C_stmListList next(T_stmList prevstms, T_stmList stms, Temp_label done)
+C_stmListList next(T_stmList prevstms, T_stmList stms, Temp_label done)
 {
     if (!stms)
         return next(prevstms,
@@ -243,7 +263,7 @@ static C_stmListList next(T_stmList prevstms, T_stmList stms, Temp_label done)
 }
 
 /* Create the beginning of a basic block */
-static C_stmListList mkBlocks(T_stmList stms, Temp_label done)
+C_stmListList mkBlocks(T_stmList stms, Temp_label done)
 {
     if (!stms)
     {
@@ -277,10 +297,10 @@ struct C_block C_basicBlocks(T_stmList stmList)
     return b;
 }
 
-static E_stack block_env;
-static struct C_block global_block;
+E_stack block_env;
+struct C_block global_block;
 
-static T_stmList getLast(T_stmList list)
+T_stmList getLast(T_stmList list)
 {
     T_stmList last = list;
     while (last->tail->tail)
@@ -288,7 +308,7 @@ static T_stmList getLast(T_stmList list)
     return last;
 }
 
-static void trace(T_stmList list)
+void trace(T_stmList list)
 {
     T_stmList last = getLast(list);
     T_stm lab = list->head;
@@ -337,7 +357,7 @@ static void trace(T_stmList list)
 
 /* get the next block from the list of stmLists, using only those that have
  * not been traced yet */
-static T_stmList getNext()
+T_stmList getNext()
 {
     if (!global_block.stmLists)
         return T_StmList(T_Label(global_block.label), NULL);
@@ -369,7 +389,7 @@ as possible are eliminated by falling through into T.LABEL(lab).
 T_stmList C_traceSchedule(struct C_block b)
 {
     C_stmListList sList;
-    block_env = S_empty();
+    block_env = E_empty_env();
     global_block = b;
 
     for (sList = global_block.stmLists; sList; sList = sList->tail)
@@ -379,3 +399,131 @@ T_stmList C_traceSchedule(struct C_block b)
 
     return getNext();
 }
+
+
+#pragma region Sample illustration for do_stm, do_exp and reorder
+/*
+T_Exp(
+    T_Binop(T_plus,
+        T_Mem(T_Name(t)),
+        T_Eseq(
+            T_Move(
+                T_Mem(T_Name(t)),
+                T_Const(2)
+            ),
+            T_Mem(T_Name(t))
+        )
+    )
+)
+
+process:
+do_stm(T_exp(...)){
+    reorder({&T_binop(...),NULL}){
+        hd = do_exp(T_binop(...)){
+            reorder({&T_men(T_name("a")), &T_eseq(...), NULL}){
+                hd = do_exp(T_men(T_name("a"))){
+                    reorder({&T_name("a"), NULL}){
+                        hd = do_exp(T_name("a")) {
+                            return {
+                                s = T_exp(T_const(0)),
+                                e = T_name("a")
+                            }
+                        }
+                        s = reorder(NULL){
+                            return T_exp(T_const(0))
+                        }
+                        *&T_name("a") = T_name("a")
+                        return {T_exp(T_const(0))}
+                    }
+                    return {
+                        s = T_exp(T_const(0)),
+                        e = T_men(T_name("a"))
+                    }
+                }
+                s = reorder({&T_eseq(...), NULL}){
+                    hd = do_exp(T_eseq(...)){
+                        x = do_exp(T_men(T_name("a"))){
+                            reorder({&T_name("a"), NULL}){
+                                hd = do_exp(T_name("a")) {
+                                    return {
+                                        s = T_exp(T_const(0)),
+                                        e = T_name("a")
+                                    }
+                                }
+                                s = reorder(NULL){
+                                    return T_exp(T_const(0))
+                                }
+                                *&T_name("a") = T_name("a")
+                                return T_exp(T_const(0))
+                            }
+                            return {
+                                s = T_exp(T_const(0)),
+                                e = T_men(T_name("a"))
+                            }
+                        }
+                        do_stm(T_mov(...)){
+                            reorder({&T_men(T_name("a")), &T_const(2), NULL}){
+                                hd = do_exp(T_men(T_name("a"))){
+                                    reorder({&T_name("a"), NULL}){
+                                        hd = do_exp(T_name("a")) {
+                                            return {
+                                                s = T_exp(T_const(0)),
+                                                e = T_name("a")
+                                            }
+                                        }
+                                        s = reorder(NULL){
+                                            return T_exp(T_const(0))
+                                        }
+                                        *&T_name("a") = T_name("a")
+                                        return T_exp(T_const(0))
+                                    }
+                                    return {
+                                        s = T_exp(T_const(0)),
+                                        e = T_men(T_name("a"))
+                                    }
+                                }
+                                s = reorder({&T_const(2), NULL}){
+                                    hd = do_exp(T_const(2)){
+                                        return {
+                                            s = T_exp(T_const(0)),
+                                            e = T_const(2)
+                                        }
+                                    }
+                                    s = reorder({NULL}){
+                                        return T_exp(T_const(0))
+                                    }
+                                    *&T_const(2) = T_const(2)
+                                    return T_exp(T_const(0))
+                                }
+                                return T_exp(T_const(0))
+                            }
+                            return T_mov(...)
+                        }
+                        return {
+                            s = T_mov(...),
+                            e = T_men(T_name("a"))
+                        }
+                    }
+                    s = reorder({NULL}){
+                        return T_exp(T_const(0))
+                    }
+                    &T_eseq(...) = T_men(T_name("a"))
+                    return T_mov(...)
+                }
+                return {T_mov(T_Temp(t), T_men(T_name("a"))), T_mov(...)}
+            }
+            return {
+                s = {T_mov(T_Temp(t), T_men(T_name("a"))), T_mov(...)}
+                e = T_binop(...)
+            }
+        }
+        s = reorder({NULL}){
+            return T_exp(T_const(0))
+        }
+        *&T_binop(...) = T_binop(...)
+        return {T_mov(T_Temp(t), T_men(T_name("a"))), T_mov(...)}
+    }
+    return {T_mov(T_Temp(t), T_men(T_name("a"))), T_mov(...), T_binop(...)}
+}
+*/
+#pragma endregion

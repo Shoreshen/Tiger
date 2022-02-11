@@ -117,6 +117,25 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "ch8",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ch8.out",
+            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/queens.tig"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }
