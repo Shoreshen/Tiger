@@ -123,7 +123,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/ch8.out",
-            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/queens.tig"],
+            "args": ["/home/shore/OneDrive/Tiger/exercises/testcases/test8.tig"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

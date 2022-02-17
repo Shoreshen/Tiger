@@ -285,9 +285,10 @@ void pr_tree_exp(FILE *out, T_exp exp, int d)
 }
 void printStmList(FILE *out, T_stmList stmList)
 {
-    for (; stmList; stmList = stmList->tail) {
+    while (stmList) {
         pr_stm(out, stmList->head, 0);
         fprintf(out, "\n");
+        stmList = stmList->tail;
     }
 }
 #pragma endregion

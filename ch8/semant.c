@@ -574,13 +574,16 @@ Ty_ty transTy (E_stack tenv, A_ty t)
     }
 }
 
-void SEM_transProg(A_exp exp)
+F_fragList SEM_transProg(A_exp exp)
 {
     // Apply base environment for type
     E_stack tenv = E_base_tenv();
     // Apply base environment for value & function
     E_stack venv = E_base_venv();
-
-    expty main = transExp(Tr_outermost(), venv, tenv, NULL, exp);
-    Tr_print(stdout, main->exp);
+    // Apply sematic analyze
+    expty trans_exp = transExp(Tr_outermost(), venv, tenv, NULL, exp);
+    // Adding to fraglist
+    Tr_procEntryExit(Tr_outermost(), trans_exp->exp, NULL);
+    
+    return Tr_getResult();
 }
