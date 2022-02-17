@@ -375,15 +375,13 @@ T_stmList getNext()
         }
     }
 }
-/* traceSchedule : Tree.stm list list * Tree.label -> Tree.stm list
-From a list of basic blocks satisfying properties 1-6,
-along with an "exit" label,
-produce a list of stms such that:
-1. and 2. as above;
-7. Every CJUMP(_,t,f) is immediately followed by LABEL f.
-The blocks are reordered to satisfy property 7; also
-in this reordering as many JUMP(T.NAME(lab)) statements
-as possible are eliminated by falling through into T.LABEL(lab).
+/* 
+traceSchedule : Tree.stm list list * Tree.label -> Tree.stm list
+From a list of basic blocks satisfying properties 1-6, along with an "exit" label, produce a list of stms such that:
+    1. and 2. as above;
+    7. Every CJUMP(_,t,f) is immediately followed by LABEL f.
+The blocks are reordered to satisfy property 7; 
+also in this reordering as many JUMP(T.NAME(lab)) statements as possible are eliminated by falling through into T.LABEL(lab).
 */
 T_stmList C_traceSchedule(struct C_block b)
 {
