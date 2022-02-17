@@ -239,6 +239,18 @@ C_stmListList StmListList(T_stmList head, C_stmListList tail)
     return p;
 }
 
+void handle_stm_list(C_stmListList* ll_tail, T_stmList* l_tail, T_stmList l_head)
+{
+    T_stmList tmp = (*l_tail);
+    // Adding stm listlist
+    (*ll_tail) = StmListList(l_head, NULL);
+    (*ll_tail) = (*ll_tail)->tail;
+    // Break stm list
+    tmp = (*l_tail)->tail;
+    (*l_tail)->tail = NULL;
+    (*l_tail) = tmp;  
+}
+
 /* 
 basicBlocks : Tree.stm list -> (Tree.stm list list * Tree.label)
 From a list of cleaned trees, produce a list of basic blocks satisfying the following properties:
@@ -260,15 +272,9 @@ struct C_block C_basicBlocks(T_stmList stmList)
     while (l_tail) {
         if (l_tail->tail == NULL) {
             l_tail->tail = T_StmList(T_Jump(T_Name(b.label), Temp_LabelList(b.label, NULL)), NULL);
+            handle_stm_list(&ll_tail, &l_tail, l_head);  
         } else if(l_tail->head->kind == T_JUMP || l_tail->head->kind == T_CJUMP) {
-            T_stmList tmp;
-            // Adding stm listlist
-            ll_tail = StmListList(l_head, NULL);
-            ll_tail = ll_tail->tail;
-            // Break stm list
-            tmp = l_tail->tail;
-            l_tail->tail = NULL;
-            l_tail = tmp;
+            handle_stm_list(&ll_tail, &l_tail, l_head);
             // Adding label if needed
             if (l_tail->head->kind != T_LABEL) {
                 l_tail = T_StmList(T_Label(Temp_newlabel()), l_tail);
@@ -276,17 +282,10 @@ struct C_block C_basicBlocks(T_stmList stmList)
             // Adjust l_head
             l_head = l_tail;
         } else if (l_tail->head->kind == T_LABEL) {
-            T_stmList tmp;
             // Adding jump
             Temp_label lab = l_tail->head->u.LABEL;
             l_tail = T_StmList(T_Jump(T_Name(lab), Temp_LabelList(lab, NULL)), l_tail);
-            // Adding stm listlist
-            ll_tail = StmListList(l_head, NULL);
-            ll_tail = ll_tail->tail;
-            // Break stm list
-            tmp = l_tail->tail;
-            l_tail->tail = NULL;
-            l_tail = tmp;
+            handle_stm_list(&ll_tail, &l_tail, l_head);
             // Adjust l_head
             l_head = l_tail;
         }
@@ -302,8 +301,9 @@ struct C_block global_block;
 T_stmList getLast(T_stmList list)
 {
     T_stmList last = list;
-    while (last->tail->tail)
+    while (last->tail->tail) {
         last = last->tail;
+    }
     return last;
 }
 
@@ -313,63 +313,63 @@ void trace(T_stmList list)
     T_stm lab = list->head;
     T_stm s = last->tail->head;
     S_enter(block_env, lab->u.LABEL, NULL);
-    if (s->kind == T_JUMP)
-    {
+    if (s->kind == T_JUMP) {
         T_stmList target = (T_stmList)S_look(block_env, s->u.JUMP.jumps->head);
-        if (!s->u.JUMP.jumps->tail && target)
-        {
-            last->tail = target; /* merge the 2 lists removing JUMP stm */
+        if (!s->u.JUMP.jumps->tail && target) {
+            // If only one jump target, merge the 2 lists removing JUMP stm
+            last->tail = target;
             trace(target);
+        } else {
+            /* merge and keep JUMP stm */
+            last->tail->tail = getNext();
         }
-        else
-            last->tail->tail = getNext(); /* merge and keep JUMP stm */
-    }
-    /* we want false label to follow CJUMP */
-    else if (s->kind == T_CJUMP)
-    {
+    } else if (s->kind == T_CJUMP) {
+        /* we want false label to follow CJUMP */
         T_stmList true = (T_stmList)S_look(block_env, s->u.CJUMP.true);
         T_stmList false = (T_stmList)S_look(block_env, s->u.CJUMP.false);
-        if (false)
-        {
+        if (false) {
             last->tail->tail = false;
             trace(false);
-        }
-        else if (true)
-        { /* convert so that existing label is a false label */
-            last->tail->head = T_Cjump(T_notRel(s->u.CJUMP.op), s->u.CJUMP.left,
-                                       s->u.CJUMP.right, s->u.CJUMP.false,
-                                       s->u.CJUMP.true);
+        } else if (true) { 
+            /* convert so that existing label is a false label */
+            last->tail->head = T_Cjump(
+                T_notRel(s->u.CJUMP.op), 
+                s->u.CJUMP.left,
+                s->u.CJUMP.right, 
+                s->u.CJUMP.false,
+                s->u.CJUMP.true
+            );
             last->tail->tail = true;
             trace(true);
-        }
-        else
-        {
+        } else {
             Temp_label false = Temp_newlabel();
-            last->tail->head = T_Cjump(s->u.CJUMP.op, s->u.CJUMP.left,
-                                       s->u.CJUMP.right, s->u.CJUMP.true, false);
+            last->tail->head = T_Cjump(
+                s->u.CJUMP.op, 
+                s->u.CJUMP.left,
+                s->u.CJUMP.right, 
+                s->u.CJUMP.true, 
+                false
+            );
             last->tail->tail = T_StmList(T_Label(false), getNext());
         }
-    }
-    else
+    } else {
         assert(0);
+    }
 }
 
 /* get the next block from the list of stmLists, using only those that have
  * not been traced yet */
 T_stmList getNext()
 {
-    if (!global_block.stmLists)
+    if (!global_block.stmLists) {
         return T_StmList(T_Label(global_block.label), NULL);
-    else
-    {
+    } else {
         T_stmList s = global_block.stmLists->head;
-        if (S_look(block_env, s->head->u.LABEL))
-        { /* label exists in the table */
+        if (S_look(block_env, s->head->u.LABEL)) {
+            /* label exists in the table */
             trace(s);
             return s;
-        }
-        else
-        {
+        } else {
             global_block.stmLists = global_block.stmLists->tail;
             return getNext();
         }

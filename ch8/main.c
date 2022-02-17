@@ -13,15 +13,11 @@
 void do_proc(FILE *out, F_frame frame, T_stm body)
 {
     T_stmList stm_l;
-    fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
-    pr_stm(out, body, 0);
     stm_l = C_linearize(body);
-    fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
-    printStmList(out, stm_l);
     stm_l = C_traceSchedule(C_basicBlocks(stm_l));
     // Printing
-    // fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
-    // printStmList(out, stm_l);
+    fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
+    printStmList(out, stm_l);
 }
 
 void do_str(FILE *out, Temp_label label, char *str)
