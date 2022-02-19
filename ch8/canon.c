@@ -239,18 +239,54 @@ C_stmListList StmListList(T_stmList head, C_stmListList tail)
     return p;
 }
 
-void handle_stm_list(C_stmListList* ll_tail, T_stmList* l_tail, T_stmList l_head)
+C_stmListList* handle_stm_list(C_stmListList* ll_tail, T_stmList** l_tail, T_stmList* l_head)
 {
-    T_stmList tmp = (*l_tail);
+    T_stmList tmp;
     // Adding stm listlist
-    (*ll_tail) = StmListList(l_head, NULL);
-    (*ll_tail) = (*ll_tail)->tail;
+    (*ll_tail) = StmListList((*l_head), NULL);
     // Break stm list
-    tmp = (*l_tail)->tail;
-    (*l_tail)->tail = NULL;
-    (*l_tail) = tmp;  
+    tmp = (**l_tail)->tail;
+    (**l_tail)->tail = NULL;
+    (*l_head) = tmp;
+    (*l_tail) = l_head;
+    return &(*ll_tail)->tail;
 }
-
+C_stmListList mkBlocks(T_stmList stms, Temp_label done);
+C_stmListList next(T_stmList prevstms, T_stmList stms, Temp_label done)
+{
+  if (!stms) 
+    return next(prevstms, 
+		T_StmList(T_Jump(T_Name(done), Temp_LabelList(done, NULL)), 
+			  NULL), done);
+  if (stms->head->kind == T_JUMP || stms->head->kind == T_CJUMP) {
+    C_stmListList stmLists;
+    prevstms->tail = stms; 
+    stmLists = mkBlocks(stms->tail, done);
+    stms->tail = NULL;
+    return stmLists;
+  } 
+  else if (stms->head->kind == T_LABEL) {
+    Temp_label lab = stms->head->u.LABEL;
+    return next(prevstms, T_StmList(T_Jump(T_Name(lab), Temp_LabelList(lab, NULL)), 
+			     stms), done);
+  }
+  else {
+    prevstms->tail = stms;
+    return next(stms, stms->tail, done);
+  }
+}
+/* Create the beginning of a basic block */
+C_stmListList mkBlocks(T_stmList stms, Temp_label done)
+{
+  if (!stms) { 
+    return NULL;
+  }
+  if (stms->head->kind != T_LABEL) {
+    return mkBlocks(T_StmList(T_Label(Temp_newlabel()), stms), done);
+  }
+  /* else there already is a label */
+  return StmListList(stms, next(stms, stms->tail, done));
+}
 /* 
 basicBlocks : Tree.stm list -> (Tree.stm list list * Tree.label)
 From a list of cleaned trees, produce a list of basic blocks satisfying the following properties:
@@ -263,34 +299,50 @@ Also produce the "label" to which control will be passed upon exit.
 */
 struct C_block C_basicBlocks(T_stmList stmList)
 {
-    struct C_block b;
-    C_stmListList ll_tail = b.stmLists;
-    T_stmList l_head = NULL,l_tail = NULL;
-    l_head = l_tail = stmList;
-    b.label = Temp_newlabel();
+    struct C_block b = {
+        .label = Temp_newlabel(),
+        .stmLists = NULL
+    };
+    C_stmListList* ll_tail = &b.stmLists;
+    T_stmList l_head = NULL;
+    T_stmList* l_tail = NULL;
+    l_head = stmList;
+    l_tail = &stmList;
 
-    while (l_tail) {
-        if (l_tail->tail == NULL) {
-            l_tail->tail = T_StmList(T_Jump(T_Name(b.label), Temp_LabelList(b.label, NULL)), NULL);
-            handle_stm_list(&ll_tail, &l_tail, l_head);  
-        } else if(l_tail->head->kind == T_JUMP || l_tail->head->kind == T_CJUMP) {
-            handle_stm_list(&ll_tail, &l_tail, l_head);
-            // Adding label if needed
-            if (l_tail->head->kind != T_LABEL) {
-                l_tail = T_StmList(T_Label(Temp_newlabel()), l_tail);
-            }
-            // Adjust l_head
-            l_head = l_tail;
-        } else if (l_tail->head->kind == T_LABEL) {
-            // Adding jump
-            Temp_label lab = l_tail->head->u.LABEL;
-            l_tail = T_StmList(T_Jump(T_Name(lab), Temp_LabelList(lab, NULL)), l_tail);
-            handle_stm_list(&ll_tail, &l_tail, l_head);
-            // Adjust l_head
-            l_head = l_tail;
-        }
-        l_tail = l_tail->tail;
+    if (stmList == NULL) {
+        return b;
     }
+    if (stmList->head->kind != T_LABEL) {
+        stmList = T_StmList(T_Label(Temp_newlabel()), stmList);
+        l_head = stmList;
+    }
+    // Skip first lable 
+    l_tail = &(*l_tail)->tail;
+
+    while (TRUE) {
+        if ((*l_tail) == NULL) {
+            (*l_tail) = T_StmList(T_Jump(T_Name(b.label), Temp_LabelList(b.label, NULL)), NULL);
+            ll_tail = handle_stm_list(ll_tail, &l_tail, &l_head); 
+            break; 
+        } else if((*l_tail)->head->kind == T_JUMP || (*l_tail)->head->kind == T_CJUMP) {
+            ll_tail = handle_stm_list(ll_tail, &l_tail, &l_head);
+            if ((*l_tail)->head->kind != T_LABEL) {
+                (*l_tail) = T_StmList(T_Label(Temp_newlabel()), (*l_tail));
+            }
+            l_tail = &(*l_tail)->tail;
+        } else if ((*l_tail)->head->kind == T_LABEL) {
+            Temp_label lab = (*l_tail)->head->u.LABEL;
+            (*l_tail) = T_StmList(T_Jump(T_Name(lab), Temp_LabelList(lab, NULL)), (*l_tail));
+            ll_tail = handle_stm_list(ll_tail, &l_tail, &l_head);
+            l_tail = &(*l_tail)->tail;
+        } else {
+            l_tail = &(*l_tail)->tail;
+        }
+    }
+
+    // struct C_block b;
+    // b.label = Temp_newlabel(); 
+    // b.stmLists = mkBlocks(stmList, b.label); 
 
     return b;
 }
@@ -328,10 +380,11 @@ void trace(T_stmList list)
         T_stmList true = (T_stmList)S_look(block_env, s->u.CJUMP.true);
         T_stmList false = (T_stmList)S_look(block_env, s->u.CJUMP.false);
         if (false) {
+            // merge false block if exists
             last->tail->tail = false;
             trace(false);
         } else if (true) { 
-            /* convert so that existing label is a false label */
+            // 
             last->tail->head = T_Cjump(
                 T_notRel(s->u.CJUMP.op), 
                 s->u.CJUMP.left,
