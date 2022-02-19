@@ -344,26 +344,24 @@ void trace(T_stmList list)
             last->tail->tail = false;
             trace(false);
         } else if (true) { 
-            // 
-            last->tail->head = T_Cjump(
-                T_notRel(s->u.CJUMP.op), 
-                s->u.CJUMP.left,
-                s->u.CJUMP.right, 
-                s->u.CJUMP.false,
-                s->u.CJUMP.true
-            );
+            Temp_label tmp;
+            tmp = s->u.CJUMP.false;
+            s->u.CJUMP.false = s->u.CJUMP.true;
+            s->u.CJUMP.true = tmp;
+            s->u.CJUMP.op = T_notRel(s->u.CJUMP.op);
             last->tail->tail = true;
             trace(true);
         } else {
-            Temp_label false = Temp_newlabel();
-            last->tail->head = T_Cjump(
-                s->u.CJUMP.op, 
-                s->u.CJUMP.left,
-                s->u.CJUMP.right, 
-                s->u.CJUMP.true, 
-                false
+            Temp_label new_false = Temp_newlabel();
+            Temp_label old_false = s->u.CJUMP.false;
+            s->u.CJUMP.false = new_false;
+            last->tail->tail = T_StmList(
+                T_Label(new_false), 
+                T_StmList(
+                    T_Jump(T_Name(old_false), Temp_LabelList(old_false, NULL)),
+                    getNext()
+                )
             );
-            last->tail->tail = T_StmList(T_Label(false), getNext());
         }
     } else {
         assert(0);
