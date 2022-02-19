@@ -251,42 +251,6 @@ C_stmListList* handle_stm_list(C_stmListList* ll_tail, T_stmList** l_tail, T_stm
     (*l_tail) = l_head;
     return &(*ll_tail)->tail;
 }
-C_stmListList mkBlocks(T_stmList stms, Temp_label done);
-C_stmListList next(T_stmList prevstms, T_stmList stms, Temp_label done)
-{
-  if (!stms) 
-    return next(prevstms, 
-		T_StmList(T_Jump(T_Name(done), Temp_LabelList(done, NULL)), 
-			  NULL), done);
-  if (stms->head->kind == T_JUMP || stms->head->kind == T_CJUMP) {
-    C_stmListList stmLists;
-    prevstms->tail = stms; 
-    stmLists = mkBlocks(stms->tail, done);
-    stms->tail = NULL;
-    return stmLists;
-  } 
-  else if (stms->head->kind == T_LABEL) {
-    Temp_label lab = stms->head->u.LABEL;
-    return next(prevstms, T_StmList(T_Jump(T_Name(lab), Temp_LabelList(lab, NULL)), 
-			     stms), done);
-  }
-  else {
-    prevstms->tail = stms;
-    return next(stms, stms->tail, done);
-  }
-}
-/* Create the beginning of a basic block */
-C_stmListList mkBlocks(T_stmList stms, Temp_label done)
-{
-  if (!stms) { 
-    return NULL;
-  }
-  if (stms->head->kind != T_LABEL) {
-    return mkBlocks(T_StmList(T_Label(Temp_newlabel()), stms), done);
-  }
-  /* else there already is a label */
-  return StmListList(stms, next(stms, stms->tail, done));
-}
 /* 
 basicBlocks : Tree.stm list -> (Tree.stm list list * Tree.label)
 From a list of cleaned trees, produce a list of basic blocks satisfying the following properties:
@@ -339,10 +303,6 @@ struct C_block C_basicBlocks(T_stmList stmList)
             l_tail = &(*l_tail)->tail;
         }
     }
-
-    // struct C_block b;
-    // b.label = Temp_newlabel(); 
-    // b.stmLists = mkBlocks(stmList, b.label); 
 
     return b;
 }
