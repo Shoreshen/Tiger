@@ -139,3 +139,15 @@ E_enventry E_FunEntry(Tr_level level, Temp_label label, Ty_tyList formals, Ty_ty
     e->u.fun.result = result;
     return e;
 }
+void* E_look(E_stack stack, void* key)
+{
+    TAB_table tab = NULL;
+    while (stack != NULL) {
+        tab = TAB_look(&stack->table, key);
+        if (tab != NULL) {
+            return tab->value;
+        }
+        stack = stack->next;
+    }
+    return NULL;
+}

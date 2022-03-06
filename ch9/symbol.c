@@ -33,15 +33,7 @@ void S_enter(E_stack stack, S_symbol key, void* value)
 
 void* S_look(E_stack stack, S_symbol key) 
 {
-    TAB_table tab = NULL;
-    while (tab == NULL && stack != NULL) {
-        tab = TAB_look(&stack->table, key);
-        stack = stack->next;
-    }
-    if (!tab) {
-        return NULL;
-    }
-    return tab->value;
+    return E_look(stack, key);
 }
 
 void S_beginScope(E_stack *stack) 

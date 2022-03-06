@@ -3,12 +3,7 @@
  *             the Jouette assembly language using Maximal Munch.
  */
 
-#include <stdio.h>
-#include <stdlib.h> /* for atoi */
-#include <string.h> /* for strcpy */
-#include "util.h"
 #include "symbol.h"
-#include "absyn.h"
 #include "temp.h"
 #include "tree.h"
 #include "assem.h"
@@ -75,19 +70,21 @@ AS_instrList AS_splice(AS_instrList a, AS_instrList b)
 static Temp_temp nthTemp(Temp_tempList list, int i)
 {
     assert(list);
-    if (i == 0)
-        return list->head;
-    else
-        return nthTemp(list->tail, i - 1);
+    int k;
+    for (k = 0; k < i; k++) {
+        list = list->tail;
+    }
+    return list->head;
 }
 
 static Temp_label nthLabel(Temp_labelList list, int i)
 {
     assert(list);
-    if (i == 0)
-        return list->head;
-    else
-        return nthLabel(list->tail, i - 1);
+    int k;
+    for (k = 0; k < i; k++) {
+        list = list->tail;
+    }
+    return list->head;
 }
 
 /* first param is char* created by this function by reading 'assem' char*
@@ -96,80 +93,74 @@ static Temp_label nthLabel(Temp_labelList list, int i)
  */
 static void format(char *result, char *assem,
                    Temp_tempList dst, Temp_tempList src,
-                   AS_targets jumps, Temp_map m)
+                   AS_targets jumps, E_stack m)
 {
     char *p;
     int i = 0; /* offset to result char* */
     for (p = assem; p && *p != '\0'; p++)
-        if (*p == '`')
-            switch (*(++p))
-            {
-            case 's':
-            {
-                int n = atoi(++p);
-                char *s = Temp_look(m, nthTemp(src, n));
-                strcpy(result + i, s);
-                i += strlen(s);
-            }
-            break;
-            case 'd':
-            {
-                int n = atoi(++p);
-                char *s = Temp_look(m, nthTemp(dst, n));
-                strcpy(result + i, s);
-                i += strlen(s);
-            }
-            break;
-            case 'j':
-                assert(jumps);
-                {
+        if (*p == '`') {
+            switch (*(++p)) {
+                case 's': {
                     int n = atoi(++p);
-                    char *s = Temp_labelchar * (nthLabel(jumps->labels, n));
+                    char *s = Temp_look(m, nthTemp(src, n));
                     strcpy(result + i, s);
                     i += strlen(s);
+                    break;
                 }
-                break;
-            case '`':
-                result[i] = '`';
-                i++;
-                break;
-            default:
-                assert(0);
+                case 'd': {
+                    int n = atoi(++p);
+                    char *s = Temp_look(m, nthTemp(dst, n));
+                    strcpy(result + i, s);
+                    i += strlen(s);
+                    break;
+                }
+                case 'j': {
+                    assert(jumps);
+                    int n = atoi(++p);
+                    char *s = Temp_labelstring(nthLabel(jumps->labels, n));
+                    strcpy(result + i, s);
+                    i += strlen(s);
+                    break;
+                }
+                case '`':
+                    result[i] = '`';
+                    i++;
+                    break;
+                default:
+                    assert(0);
             }
-        else
-        {
+        } else{
             result[i] = *p;
             i++;
         }
     result[i] = '\0';
 }
 
-void AS_print(FILE *out, AS_instr i, Temp_map m)
+void AS_print(FILE *out, AS_instr i, E_stack m)
 {
     char r[200]; /* result */
     switch (i->kind)
     {
-    case I_OPER:
-        format(r, i->u.OPER.assem, i->u.OPER.dst, i->u.OPER.src, i->u.OPER.jumps, m);
-        fprintf(out, "%s", r);
-        break;
-    case I_LABEL:
-        format(r, i->u.LABEL.assem, NULL, NULL, NULL, m);
-        fprintf(out, "%s", r);
-        /* i->u.LABEL->label); */
-        break;
-    case I_MOVE:
-        format(r, i->u.MOVE.assem, i->u.MOVE.dst, i->u.MOVE.src, NULL, m);
-        fprintf(out, "%s", r);
-        break;
+        case I_OPER:
+            format(r, i->u.OPER.assem, i->u.OPER.dst, i->u.OPER.src, i->u.OPER.jumps, m);
+            fprintf(out, "%s", r);
+            break;
+        case I_LABEL:
+            format(r, i->u.LABEL.assem, NULL, NULL, NULL, m);
+            fprintf(out, "%s", r);
+            /* i->u.LABEL->label); */
+            break;
+        case I_MOVE:
+            format(r, i->u.MOVE.assem, i->u.MOVE.dst, i->u.MOVE.src, NULL, m);
+            fprintf(out, "%s", r);
+            break;
     }
 }
 
 /* c should be COL_color; temporarily it is not */
-void AS_printInstrList(FILE *out, AS_instrList iList, Temp_map m)
+void AS_printInstrList(FILE *out, AS_instrList iList, E_stack m)
 {
-    for (; iList; iList = iList->tail)
-    {
+    for (; iList; iList = iList->tail) {
         AS_print(out, iList->head, m);
     }
     fprintf(out, "\n");

@@ -23,3 +23,9 @@ Temp_label Temp_namedlabel(char* name);
 Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t);
 Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t);
 char* Temp_labelstring(Temp_label s);
+
+void Temp_layerMap(E_stack* stack);
+E_stack Temp_empty(void);
+void Temp_enter(E_stack m, Temp_temp t, char* s);
+char* Temp_look(E_stack m, Temp_temp t);
+E_stack Temp_name();
