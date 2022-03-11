@@ -1,6 +1,7 @@
 #include "frame.h"
 #include "temp.h"
 #include "tree.h"
+#include "assem.h"
 
 #define F_KEEP 6 // keep 6 formal param in registers
 const int F_WORD_SIZE = 8; // x64 architecture
@@ -96,6 +97,37 @@ T_stm F_procEntryExit1(F_frame frame, T_stm stm)
 {
     return stm;
 }
+static Temp_tempList returnSink = NULL;
+
+AS_instrList F_procEntryExit2(AS_instrList body) {
+    Temp_tempList calleeSaves = NULL;
+    if (!returnSink) {
+        returnSink = Temp_TempList(
+            F_ZERO(),
+            Temp_TempList(
+                F_RA(),
+                Temp_TempList(
+                    F_SP(), 
+                    calleeSaves
+                )
+            )
+        );
+    }
+    return AS_splice(
+        body, 
+        AS_InstrList(
+            AS_Oper("", NULL, returnSink, NULL), 
+            NULL
+        )
+    );
+}
+
+AS_proc F_procEntryExit3(F_frame frame, AS_instrList body) {
+    char buf[100];
+    sprintf(buf, "PROCEDURE %s\n", S_name(frame->name));
+    return AS_Proc(String(buf), body, "END\n");
+}
+
 void F_printFrags(FILE* out, F_fragList frags)
 {
     while(frags) {
