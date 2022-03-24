@@ -6,15 +6,20 @@
 static int temps = 0;
 static int labels = 0;
 
-Temp_temp Temp_newtemp(void)
+Temp_temp Temp_newtemp()
 {
     // Allocate temp struct
     Temp_temp p = checked_malloc(sizeof(*p));
     p->num = temps++;
-    // Create string representation of temp & insert into map
-    char r[100];
-    sprintf(r, "%d", p->num);
-    Temp_enter(Temp_name(), p, get_heap_str(&r[0]));
+    Temp_enter(Temp_name(), p, get_heap_str("r%d", p->num));
+    return p;
+}
+Temp_temp Temp_tempstring(char* name)
+{
+    // Allocate temp struct
+    Temp_temp p = checked_malloc(sizeof(*p));
+    p->num = temps++;
+    Temp_enter(Temp_name(), p, get_heap_str("%s(%d)", name, p->num));
     return p;
 }
 
@@ -25,9 +30,7 @@ char* Temp_labelstring(Temp_label s)
 
 Temp_label Temp_newlabel(void)
 {
-    char buf[100];
-    sprintf(&buf[0], "L%d", labels++);
-    return Temp_namedlabel(get_heap_str(&buf[0]));
+    return Temp_namedlabel(get_heap_str("L%d", labels++));
 }
 
 Temp_label Temp_namedlabel(char* name)

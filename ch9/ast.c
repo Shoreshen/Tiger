@@ -3,6 +3,38 @@
 
 A_exp ast_root;
 
+int calc_int(A_oper oper, int left, int right)
+{
+    switch (oper) {
+        case A_plusOp:
+            return left + right;
+        case A_minusOp:
+            return left - right;
+        case A_timesOp:
+            return left * right;
+        case A_divideOp:
+            return left / right;
+        case A_eqOp:
+            return left == right;
+        case A_neqOp:
+            return left != right;
+        case A_ltOp:
+            return left < right;
+        case A_leOp:
+            return left <= right;
+        case A_gtOp:
+            return left > right;
+        case A_geOp:
+            return left >= right;
+        case A_andOp:
+            return left && right;
+        case A_orOp:
+            return left || right;
+        default:
+            assert(0);
+    }
+}
+
 #pragma region AST-constructor
 A_var A_SimpleVar(A_pos pos, S_symbol sym)
 {
@@ -73,12 +105,17 @@ A_exp A_CallExp(A_pos pos, S_symbol func, A_expList args)
 A_exp A_OpExp(A_pos pos, A_oper oper, A_exp left, A_exp right)
 {
     A_exp p = checked_malloc(sizeof(*p));
-    p->kind = A_opExp;
     memcpy(&p->pos, pos, sizeof(struct A_pos_));
-    p->u.op.oper = oper;
-    p->u.op.left = left;
-    p->u.op.right = right;
-    return p;
+    if (left->kind == A_intExp && right->kind == A_intExp) {
+        p->kind = A_intExp;
+        p->u.intt = calc_int(oper, left->u.intt, right->u.intt);
+    } else {
+        p->kind = A_opExp;
+        p->u.op.oper = oper;
+        p->u.op.left = left;
+        p->u.op.right = right;
+        return p;
+    }
 }
 A_exp A_RecordExp(A_pos pos, S_symbol typ, A_efieldList fields)
 {
@@ -342,6 +379,12 @@ void print_oper(FILE *out, A_oper oper, int d)
             break;
         case A_geOp:
             fprintf(out, "geOp");
+            break;
+        case A_andOp:
+            fprintf(out, "andOp");
+            break;
+        case A_orOp:
+            fprintf(out, "orOp");
             break;
         default:
             assert(0);

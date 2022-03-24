@@ -105,6 +105,9 @@ T_exp unEx(Tr_exp e)
         case Tr_nx:
             return T_Eseq(e->u.nx, T_Const(0));
         case Tr_cx: {
+            // Create expressions that:
+            //  1. Return 1 if e->u.cx->stm jump to e->u.cs->trues
+            //  2. Return 0 if e->u.cx->stm jump to e->u.cs->falses
             Temp_temp r = Temp_newtemp();
             Temp_label t = Temp_newlabel();
             Temp_label f = Temp_newlabel();
@@ -113,7 +116,7 @@ T_exp unEx(Tr_exp e)
             return T_Eseq(
                 T_Move(T_Temp(r), T_Const(1)),              // step1: move 1 to r
                 T_Eseq(
-                    e->u.cx->stm,                            // step2: execute stm
+                    e->u.cx->stm,                           // step2: execute stm
                     T_Eseq(
                         T_Label(f),                         // step3: step2 will jump to f if evaluated as false
                         T_Eseq(
@@ -146,6 +149,8 @@ Tr_cjx unCx(Tr_exp e)
 {
     switch(e->kind) {
         case Tr_ex:
+            // If exp is evaluated as true, jump to t, else jump to f
+            // Both true and false need to be filled
             T_stm stm = NULL;
             if (e->kind == Tr_ex && e->u.ex->kind == T_CONST) {
                 stm = T_Jump(T_Name(NULL), Temp_LabelList(NULL, NULL)); // Directly jump for CONST

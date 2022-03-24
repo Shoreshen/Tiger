@@ -1,20 +1,403 @@
-#include "codegen.h"
 #include "assem.h"
 #include "temp.h"
 #include "tree.h"
 #include "frame.h"
+#include "symbol.h"
 
-static AS_instrList iList=NULL, last=NULL;
+#define FLAG_OFFSET_SET 1
+#define FLAG_INDEX_SET 1 << 1
+#define FLAG_BASE_SET 1 << 2
+#define FLAG_ALL (FLAG_BASE_SET & FLAG_INDEX_SET & FLAG_OFFSET_SET)
 
+static AS_instrList iList = NULL, last = NULL;
+Temp_temp munchExp(T_exp e);
+void munchStm(T_stm s);
+struct EffAddr {
+    char* assem;
+    Temp_tempList src;
+};
 void emit(AS_instr inst) {
-    if (last!=NULL) {
-        last = last->tail = AS_InstrList(inst,NULL);
+    if (last != NULL) {
+        last->tail = AS_InstrList(inst,NULL);
+        last = last->tail;
     } else { 
         last = iList = AS_InstrList(inst,NULL);
     }
 }
 
-Temp_temp munchExp(T_exp e);
-void munchStm(T_stm s);
+void find_elem(T_exp e, int* scale, int* offset, Temp_temp* index, Temp_temp* base, long *flag)
+{
+    if (e->kind == T_CONST && *offset == -1) {
+        *offset = e->u.CONST;
+        *flag &= FLAG_OFFSET_SET; // offset setted
+        return;
+    } else if (e->kind == T_BINOP && e->u.BINOP.op == T_mul && *index == NULL) {
+        T_exp left = e->u.BINOP.left;
+        T_exp right = e->u.BINOP.right;
+        if (right->kind == T_CONST && right->u.CONST == 8) {
+            *scale = 8;
+            *index = munchExp(left);
+            *flag &= FLAG_INDEX_SET;
+            return;
+        }
+        if (left->kind == T_CONST && left->u.CONST == 8) {
+            *scale = 8;
+            *index = munchExp(right);
+            *flag &= FLAG_INDEX_SET;
+            return;
+        }
+    } 
+    if (*base == NULL) {
+        *base = munchExp(e);
+        *flag &= FLAG_BASE_SET;
+    } else if (*index == NULL) {
+        *index = munchExp(e);
+        *scale = 1;
+        *flag &= FLAG_INDEX_SET;
+        return;
+    }
+}
+int handle_3(T_exp e1, T_exp e2, T_exp e3, struct EffAddr* addr)
+{
+    Temp_temp index = NULL;
+    Temp_temp base = NULL;
+    int scale = 0;
+    int offset = 0;
+    long flag = 0;
+    find_elem(e1, &scale, &offset, &index, &base, &flag);
+    find_elem(e2, &scale, &offset, &index, &base, &flag);
+    find_elem(e3, &scale, &offset, &index, &base, &flag);
+    if (!(flag ^ FLAG_ALL)) {
+        return FALSE;
+    }
+    addr->assem = get_heap_str("`s0+`s1*%d+%d", scale, offset);
+    addr->src = Temp_TempList(base,Temp_TempList(index,NULL));
+    return TRUE;
+}
+void handle_2(T_exp e1, T_exp e2, struct EffAddr* addr)
+{
+    Temp_temp index = NULL;
+    Temp_temp base = NULL;
+    int scale = 0;
+    int offset = -1;
+    long flag = 0;
+    find_elem(e1, &scale, &offset, &index, &base, &flag);
+    find_elem(e2, &scale, &offset, &index, &base, &flag);
+    if (flag & FLAG_OFFSET_SET) {
+        if (scale) {
+            addr->assem = get_heap_str("`s0*%d+%d", scale, offset);
+            addr->src = Temp_TempList(index, NULL);
+        } else {
+            addr->assem = get_heap_str("`s0+%d", offset);
+            addr->src = Temp_TempList(base, NULL);
+        }
+    } else {
+        addr->assem = get_heap_str("`s0+`s1*%d", offset);
+        addr->src =  Temp_TempList(base,Temp_TempList(index,NULL));
+    }
+}
+void handle_1(T_exp e1, struct EffAddr* addr)
+{
+    Temp_temp index = NULL;
+    Temp_temp base = NULL;
+    int scale = 0;
+    int offset = -1;
+    long flag = 0;
+    find_elem(e1, &scale, &offset, &index, &base, &flag);
+    if (flag & FLAG_OFFSET_SET) {
+        addr->assem = get_heap_str("%d", offset);
+    } else if (flag & FLAG_INDEX_SET) {
+        addr->assem = get_heap_str("`s0*%d", scale);
+        addr->src = Temp_TempList(index, NULL);
+    } else {
+        addr->assem = get_heap_str("`s0");
+        addr->src = Temp_TempList(base, NULL);
+    }
+}
+int32_t x86_eff_addr(T_exp e, struct EffAddr* addr) 
+{
+    if (e->kind == T_BINOP && e->u.BINOP.op == T_plus) {
+        T_exp left = e->u.BINOP.left;
+        T_exp right = e->u.BINOP.right;
+        if (left->kind == T_BINOP && left->u.BINOP.op == T_plus) {
+            if (handle_3(left->u.BINOP.left, left->u.BINOP.right, right, addr)) {
+                return 3;
+            }
+        }
+        if (right->kind == T_BINOP && right->u.BINOP.op == T_plus) {
+            if (handle_3(right->u.BINOP.left, right->u.BINOP.right, left, addr)) {
+                return 3;
+            }
+        }
+        handle_2(left, right, addr);
+        return 2;
+    }
+    handle_1(e, addr);
+    if (addr->src) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+int fill_last_tmplist(struct EffAddr *addr, Temp_temp last)
+{
+    int i = 0;
+    if (!(addr->src)) {
+        addr->src = Temp_TempList(last, NULL);
+    } else {
+        Temp_tempList tmp;
+        i++;
+        while (tmp->tail) {
+            tmp = tmp->tail;
+            i++;
+        }
+        tmp->tail = Temp_TempList(last, NULL);
+    }
+    return i;
+}
+Temp_temp munchExp(T_exp e)
+{
+    switch (e->kind) {
+        case T_BINOP: {
+            T_exp left = e->u.BINOP.left;
+            T_exp right = e->u.BINOP.right;
+            T_binOp op = e->u.BINOP.op;
+            if (op == T_plus) {
+                if (left->kind == T_CONST) {
+                    Temp_temp r = munchExp(right);
+                    emit(AS_Oper(
+                        get_heap_str("add `d0, %d", left->u.CONST),
+                        Temp_TempList(r, NULL),
+                        Temp_TempList(r, NULL), // Add instruction, first reg is both input and output
+                        NULL
+                    ));
+                    return r;
+                } else if (right->kind == T_CONST) {
+                    Temp_temp r = munchExp(left);
+                    emit(AS_Oper(
+                        get_heap_str("add `d0, %d", right->u.CONST),
+                        Temp_TempList(r, NULL),
+                        Temp_TempList(r, NULL), 
+                        NULL
+                    ));
+                    return r;
+                } else {
+                    Temp_temp r = munchExp(left);
+                    emit(AS_Oper(
+                        get_heap_str("add `d0, `s0", right->u.CONST),
+                        Temp_TempList(r, NULL),
+                        Temp_TempList(munchExp(right), Temp_TempList(r, NULL)), 
+                        NULL
+                    ));
+                    return r;
+                }
+            } else if (op == T_minus) {
+                if (right->kind == T_CONST) {
+                    Temp_temp r = munchExp(left);
+                    emit(AS_Oper(
+                        get_heap_str("sub `d0, %d", right->u.CONST),
+                        Temp_TempList(r, NULL),
+                        Temp_TempList(r, NULL), 
+                        NULL
+                    ));
+                    return r;
+                } else {
+                    Temp_temp r = munchExp(left);
+                    emit(AS_Oper(
+                        get_heap_str("sub `d0, `s0", right->u.CONST),
+                        Temp_TempList(r, NULL),
+                        Temp_TempList(munchExp(right), Temp_TempList(r, NULL)), 
+                        NULL
+                    ));
+                    return r;
+                }
+            } else if (op == T_mul) {
+                Temp_temp r = NULL;
+                if (left->kind == T_CONST) {
+                    emit(AS_Move(
+                        get_heap_str("mov `d0, %d", left->u.CONST),
+                        Temp_TempList(F_AX(), NULL),
+                        NULL
+                    ));
+                    r = munchExp(right);
+                } else if (right->kind == T_CONST){
+                    emit(AS_Move(
+                        get_heap_str("mov `d0, %d", right->u.CONST),
+                        Temp_TempList(F_AX(), NULL),
+                        NULL
+                    ));
+                    r = munchExp(left);
+                } else {
+                    emit(AS_Move(
+                        "mov `d0, `s0",
+                        Temp_TempList(munchExp(left), NULL),
+                        NULL
+                    ));
+                    r = munchExp(right);
+                }
+                // Both rax, rdx are source and dest of the imul instruction
+                emit(AS_Oper(
+                    "imul `s0",
+                    Temp_TempList(r, 
+                        Temp_TempList(F_AX(), 
+                            Temp_TempList(F_DX(), NULL)
+                        )
+                    ),
+                    Temp_TempList(F_AX(), Temp_TempList(F_DX(), NULL)),
+                    NULL
+                ));
+                return F_AX();
+            } else if (op == T_div) {
+                Temp_temp r = NULL;
+                if (left->kind == T_CONST) {
+                    emit(AS_Move(
+                        get_heap_str("mov `d0, %d", left->u.CONST),
+                        Temp_TempList(F_AX(), NULL),
+                        NULL
+                    ));
+                    r = munchExp(right);
+                } else {
+                    emit(AS_Move(
+                        "mov `d0, `s0",
+                        Temp_TempList(munchExp(left), NULL),
+                        NULL
+                    ));
+                    r = munchExp(right);
+                }
+                // Both rax, rdx are source and dest of the imul instruction
+                emit(AS_Oper(
+                    "idiv `s0",
+                    Temp_TempList(r, 
+                        Temp_TempList(F_AX(), 
+                            Temp_TempList(F_DX(), NULL)
+                        )
+                    ),
+                    Temp_TempList(F_AX(), Temp_TempList(F_DX(), NULL)),
+                    NULL
+                ));
+                return F_AX();
+            }
+        }
+        case T_MEM: {
+            struct EffAddr addr = {
+                .assem = NULL,
+                .src = NULL
+            };
+            int pos = x86_eff_addr(e->u.MEM, &addr);
+            Temp_temp r = Temp_newtemp();
+            emit(AS_Move(
+                get_heap_str("mov `d0, [%s]", addr.assem),
+                Temp_TempList(r, NULL),
+                addr.src
+            ));
+            return r;
+        }
+        default:
+            assert(0);
+    }
+    return NULL;
+}
+void munchStm(T_stm s)
+{
+    switch (s->kind) {
+        case T_SEQ:
+            munchStm(s->u.SEQ.left);
+            munchStm(s->u.SEQ.right);
+            break;
+        case T_LABEL:
+            emit(AS_Label(
+                get_heap_str("%s\n", S_name(s->u.LABEL)),
+                s->u.LABEL
+            ));
+            break;
+        case T_JUMP:
+            emit(AS_Oper(
+                "jmp `d0\n",
+                NULL, NULL,
+                AS_Targets(s->u.JUMP.jumps)
+            ));
+            break;
+        case T_CJUMP:
+            Temp_temp left = munchExp(s->u.CJUMP.left);
+            Temp_temp right = munchExp(s->u.CJUMP.right);
+            emit(AS_Oper(
+                "cmp `s0, `s1\n",
+                NULL,
+                Temp_TempList(left, Temp_TempList(right, NULL)),
+                NULL
+            ));
+            char* instr = NULL;
+            switch (s->u.CJUMP.op) {
+                case T_eq:
+                    instr = "je";
+                    break;
+                case T_ne:
+                    instr = "jne";
+                    break;
+                case T_lt:
+                    instr = "jl";
+                    break;
+                case T_le:
+                    instr = "jle";
+                    break;
+                case T_gt:
+                    instr = "jg";
+                    break;
+                case T_ge:
+                    instr = "jge";
+                    break;
+            }
+            emit(AS_Oper(
+                get_heap_str("%s `d0", instr),
+                NULL,
+                NULL,
+                AS_Targets(Temp_LabelList(s->u.CJUMP.true, NULL))
+            ));
+            break;
+        case T_MOVE: {
+            T_exp dst = s->u.MOVE.dst;
+            T_exp src = s->u.MOVE.src;
+            if (dst->kind == T_MEM) {
+                struct EffAddr addr = {
+                    .assem = NULL,
+                    .src = NULL
+                };
+                int pos = x86_eff_addr(dst->u.MEM, &addr);
+                int check = fill_last_tmplist(&addr, munchExp(s->u.MOVE.src));
+                emit(AS_Move(
+                    get_heap_str("mov [%s], `s%d\n", addr.assem, pos),
+                    NULL,
+                    addr.src
+                ));
+            } else if (dst->kind == T_TEMP) {
+                emit(AS_Move(
+                    get_heap_str("mov `d0, `s0\n"),
+                    Temp_TempList(munchExp(s->u.MOVE.dst),NULL),
+                    Temp_TempList(munchExp(s->u.MOVE.src),NULL)
+                ));
+            } else {
+                assert(0);
+            }
+            break;
+        }
+        case T_EXP:
+            munchExp(s->u.EXP);
+            break;
+        default:
+            assert(0);
+    }
+}
 
-AS_instrList F_codegen(F_frame f, T_stmList stmList);
+AS_instrList F_codegen(F_frame f, T_stmList stmList)
+{
+    T_stmList sl = stmList;
+    AS_instrList as_list;
+    while (sl) {
+        munchStm(sl->head);
+        sl = sl->tail;
+    }
+    as_list = iList;
+    iList = NULL;
+    last = NULL;
+    return as_list;
+}

@@ -2,7 +2,6 @@
 
 #include "util.h"
 
-typedef struct Temp_tempList_ *Temp_tempList;
 typedef struct Temp_labelList_ *Temp_labelList;
 
 struct Temp_temp_ {
@@ -18,6 +17,7 @@ struct Temp_labelList_ {
 };
 
 Temp_temp Temp_newtemp(void);
+Temp_temp Temp_tempstring(char* name);
 Temp_label Temp_newlabel(void);
 Temp_label Temp_namedlabel(char* name);
 Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t);

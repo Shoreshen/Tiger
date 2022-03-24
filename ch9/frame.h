@@ -46,6 +46,8 @@ Temp_label F_name(F_frame f);
 Temp_temp F_FP();
 Temp_temp F_SP();
 Temp_temp F_RV();
+Temp_temp F_AX();
+Temp_temp F_DX();
 Temp_temp F_Keep_Regs(int i);
 T_exp F_Exp(F_access acc, T_exp framePtr);
 F_fragList F_FragList(F_frag head, F_fragList tail);

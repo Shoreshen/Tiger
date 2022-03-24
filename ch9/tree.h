@@ -60,7 +60,8 @@ struct T_stm_ {
         struct {
             T_relOp op;
             T_exp left, right;
-            Temp_label true, false;
+            Temp_label true;
+            Temp_label false;
         } CJUMP;
         struct {
             T_exp dst;

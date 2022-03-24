@@ -16,7 +16,8 @@ struct AS_instr_ {
 	union {
 		struct {
 			char *assem;
-			Temp_tempList dst, src;
+			Temp_tempList dst;
+			Temp_tempList src;
 			AS_targets jumps;
 		} OPER;
 		struct {
@@ -25,7 +26,8 @@ struct AS_instr_ {
 		} LABEL;
 		struct {
 			char *assem;
-			Temp_tempList dst, src;
+			Temp_tempList dst;
+			Temp_tempList src;
 		} MOVE;
 	} u;
 };

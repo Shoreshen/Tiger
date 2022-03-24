@@ -2,6 +2,7 @@
 #include "temp.h"
 #include "tree.h"
 #include "assem.h"
+#include "symbol.h"
 
 #define F_KEEP 6 // keep 6 formal param in registers
 const int F_WORD_SIZE = 8; // x64 architecture
@@ -25,12 +26,22 @@ T_exp F_Exp(F_access acc, T_exp framePtr) {
     }
 }
 
+static Temp_temp dx = NULL;
+Temp_temp F_DX() {
+    // x86-64 architecture use rsp as stack pointer
+    // it is a constant register, thus return a const Temp_temp
+    if(!dx) {
+        dx = Temp_tempstring("rdx");
+    }
+    return dx;
+}
+
 static Temp_temp fp = NULL;
 Temp_temp F_FP() {
     // x86-64 architecture use rbp as frame pointer
     // it is a constant register, thus return a const Temp_temp
     if(!fp) {
-        fp = Temp_newtemp();
+        fp = Temp_tempstring("rbp");
     }
     return fp;
 }
@@ -40,7 +51,7 @@ Temp_temp F_SP() {
     // x86-64 architecture use rsp as stack pointer
     // it is a constant register, thus return a const Temp_temp
     if(!sp) {
-        sp = Temp_newtemp();
+        sp = Temp_tempstring("rsp");
     }
     return sp;
 }
@@ -50,7 +61,15 @@ Temp_temp F_RV() {
     // x86-64 architecture use rax to store return value from function
     // it is a constant register, thus return a const Temp_temp
     if(!rv) {
-        rv = Temp_newtemp();
+        rv = Temp_tempstring("rax");
+    }
+    return rv;
+}
+Temp_temp F_AX() {
+    // x86-64 architecture use rsp as stack pointer
+    // it is a constant register, thus return a const Temp_temp
+    if(!rv) {
+        rv = Temp_tempstring("rax");
     }
     return rv;
 }
@@ -61,7 +80,22 @@ Temp_temp F_Keep_Regs(int i)
     // x86-64 architecture use rdi, rsi, rdx, rcx, r8, r9 to pass first 6 formal parameters
     // Thus returning constant reguster number
     if (!f_regs[i]) {
-        f_regs[i] = Temp_newtemp();
+        char* reg = NULL;
+        switch (i) {
+            case 0:
+                reg = "rdi";
+            case 1:
+                reg = "rsi";
+            case 2:
+                reg = "rdx";
+            case 3:
+                reg = "rci";
+            case 4:
+                reg = "r8";
+            case 5:
+                reg = "r9";
+        }
+        f_regs[i] = Temp_tempstring(reg);
     }
     return f_regs[i];
 }
@@ -102,14 +136,12 @@ static Temp_tempList returnSink = NULL;
 AS_instrList F_procEntryExit2(AS_instrList body) {
     Temp_tempList calleeSaves = NULL;
     if (!returnSink) {
+        // sink: list of registers that alive after function call
         returnSink = Temp_TempList(
-            F_ZERO(),
+            F_RV(),
             Temp_TempList(
-                F_RA(),
-                Temp_TempList(
-                    F_SP(), 
-                    calleeSaves
-                )
+                F_SP(), 
+                calleeSaves
             )
         );
     }
@@ -125,7 +157,7 @@ AS_instrList F_procEntryExit2(AS_instrList body) {
 AS_proc F_procEntryExit3(F_frame frame, AS_instrList body) {
     char buf[100];
     sprintf(buf, "PROCEDURE %s\n", S_name(frame->name));
-    return AS_Proc(String(buf), body, "END\n");
+    return AS_Proc(buf, body, "END\n");
 }
 
 void F_printFrags(FILE* out, F_fragList frags)

@@ -45,11 +45,19 @@ void append_str(struct string* str, char* src)
     str->len = new_len;
 }
 
-char* get_heap_str(char* str)
+char* get_heap_str(char* format, ...)
 {
-    char *tmp = checked_malloc(strlen(str) + 1);
-    strcpy(tmp, str);
-    return tmp;
+    char buf[256];
+    char* heap_str;
+    va_list args;
+
+    va_start(args, format);
+    vsnprintf(&buf[0], sizeof(buf), format, args);
+    va_end(args);
+
+    heap_str = checked_malloc(strlen(&buf[0]));
+    strcpy(heap_str, &buf[0]);
+    return heap_str;
 }
 
 U_boolList U_BoolList(int head, U_boolList tail)

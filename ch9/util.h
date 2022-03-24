@@ -25,7 +25,7 @@ struct string {
 void init_str(struct string* str);
 void put_str(struct string* str, char src);
 void append_str(struct string* str, char* src);
-char* get_heap_str(char* str);
+char* get_heap_str(char* format, ...);
 #pragma endregion
 
 #pragma region boollist
@@ -68,12 +68,13 @@ typedef struct A_pos_ *A_pos;
 // top_sort.h
 typedef struct TS_node_ *TS_node;
 typedef struct TS_edge_ *TS_edge;
-// stack.c
+// stack.h
 typedef struct STK_stack_* STK_stack;
-// temp.c
+// temp.h
 typedef struct Temp_temp_ *Temp_temp;
 typedef struct S_symbol_ *Temp_label;
 typedef struct Temp_labelList_* Temp_labelList;
+typedef struct Temp_tempList_ *Temp_tempList;
 // translate.c
 typedef struct Tr_access_ *Tr_access;
 typedef struct Tr_level_ *Tr_level;

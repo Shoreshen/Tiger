@@ -20,12 +20,6 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
     printStmList(out, stm_l);
 }
 
-void do_str(FILE *out, Temp_label label, char *str)
-{
-    // Printing
-    fprintf(out, ".string %s: \"%s\"\n", Temp_labelstring(label), str);
-}
-
 int main(int argc, char **argv) {
     F_fragList frags = NULL;
 
@@ -46,7 +40,10 @@ int main(int argc, char **argv) {
         if (frags->head->kind == F_procFrag) {
             do_proc(stdout, frags->head->u.proc.frame, frags->head->u.proc.body);
         } else if (frags->head->kind == F_stringFrag) {
-            do_str(stdout, frags->head->u.stringg.label, frags->head->u.stringg.str);
+            fprintf(stdout, ".string %s: \"%s\"\n", 
+                Temp_labelstring(frags->head->u.stringg.label), 
+                frags->head->u.stringg.str
+            );
         } else {
             assert(0);
         }
