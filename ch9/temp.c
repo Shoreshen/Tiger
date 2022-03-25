@@ -47,7 +47,23 @@ Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t)
     p->tail=t;
     return p;
 }
+Temp_tempList Temp_TempLists(Temp_temp temps, ...)
+{
+    va_list temp;
+    Temp_temp arg;
+    Temp_tempList head, tail;
+    va_start(temp, temps);
 
+    head = Temp_TempList(temps, NULL);
+    tail = head;
+    while (arg = va_arg(temp, Temp_temp)) {
+        tail->tail = Temp_TempList(arg, NULL);
+        tail = tail->tail;
+    }
+
+    va_end(temp);
+    return head;
+}
 Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t)
 {
     Temp_labelList p = checked_malloc(sizeof (*p));
