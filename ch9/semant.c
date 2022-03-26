@@ -433,7 +433,11 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                 }
                 // Enter function declaration
                 Tr_level new_level = Tr_newLevel(level, escapes_head);
-                S_enter(venv, dec->u.function->name, E_FunEntry(new_level, Tr_name(new_level), params_head, result));
+                S_enter(
+                    venv, 
+                    dec->u.function->name, 
+                    E_FunEntry(new_level, Tr_name(new_level), params_head, result)
+                );
                 break;
             }
             default:
@@ -520,7 +524,10 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
                     EM_error(&dec->pos, "Desc->func: function body type does not match with return type");
                     exit(1);
                 }
-                Tr_procEntryExit(fun_entry->u.fun.level, body->exp, Tr_formals(fun_entry->u.fun.level));
+                Tr_procEntryExit(
+                    fun_entry->u.fun.level, body->exp, 
+                    Tr_formals(fun_entry->u.fun.level)
+                );
                 S_endScope(&venv, NULL);
                 break;
             }

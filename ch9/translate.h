@@ -2,7 +2,6 @@
 #include "util.h"
 #include "ast.h"
 
-typedef struct Tr_accessList_ *Tr_accessList;
 typedef struct Tr_exp_ *Tr_exp;
 typedef struct Tr_expList_ *Tr_expList;
 

@@ -155,6 +155,18 @@ int fill_last_tmplist(struct EffAddr *addr, Temp_temp last)
     }
     return i;
 }
+void muncArgs(T_expList args)
+{
+    if (args->tail) {
+        muncArgs(args->tail);
+    }
+    emit(AS_Oper(
+        "push `s0",
+        NULL,
+        Temp_TempLists(munchExp(args->head), NULL),
+        NULL
+    ));
+}
 Temp_temp munchExp(T_exp e)
 {
     switch (e->kind) {
@@ -297,6 +309,17 @@ Temp_temp munchExp(T_exp e)
                 NULL
             ));
             return r;
+        }
+        case T_CONST: {
+            Temp_temp r = Temp_newtemp();
+            emit(AS_Move(
+                get_heap_str("mov `d0, %d", e->u.CONST),
+                Temp_TempLists(r, NULL),
+                NULL
+            ));
+        }
+        case T_CALL: {
+            muncArgs(e->u.CALL.args);
         }
         default:
             assert(0);

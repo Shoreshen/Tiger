@@ -123,9 +123,9 @@ F_frag F_ProcFrag(T_stm body, F_frame frame)
     f->u.proc.frame = frame;
     return f;
 }
-T_exp F_externalCall(char *s, T_expList args) {
+T_exp F_externalCall(char *s, T_expList args, F_accessList accesses) {
     // cdcel need to 
-    return T_Call(T_Name(Temp_namedlabel(s)), args);
+    return T_Call(T_Name(Temp_namedlabel(s)), args, accesses);
 }
 T_stm F_procEntryExit1(F_frame frame, T_stm stm)
 {
@@ -178,7 +178,7 @@ void F_printFrags(FILE* out, F_fragList frags)
         fprintf(out, "\n");
     }
 }
-F_access InFrame(int offset)
+F_access F_InFrame(int offset)
 {
     F_access a = checked_malloc(sizeof(*a));
     a->kind = inFrame;
@@ -186,7 +186,7 @@ F_access InFrame(int offset)
     return a;
 }
 
-F_access InReg(Temp_temp reg)
+F_access F_InReg(Temp_temp reg)
 {
     F_access a = checked_malloc(sizeof(*a));
     a->kind = inReg;
@@ -213,7 +213,7 @@ F_frame F_newFrame(Temp_label name, U_boolList formals)
 
     while (formals) {
         if (f->inReg_count < F_KEEP && !(formals->head)) {
-            f->formals = F_AccessList(InReg(F_Keep_Regs(f->inReg_count)), f->formals);
+            f->formals = F_AccessList(F_InReg(F_Keep_Regs(f->inReg_count)), f->formals);
             f->inReg_count++;
         } else {
             /* 
@@ -229,7 +229,7 @@ F_frame F_newFrame(Temp_label name, U_boolList formals)
                 rbp + 16: first non-escape arg
                 ...
             */
-            f->formals = F_AccessList(InFrame((f->inFrame_count * F_WORD_SIZE)), f->formals);
+            f->formals = F_AccessList(F_InFrame((f->inFrame_count * F_WORD_SIZE)), f->formals);
             f->inFrame_count++;
         }
         formals = formals->tail;
@@ -242,10 +242,10 @@ F_access F_allocLocal(F_frame f, int escape)
 {
     F_access a = NULL;
     if (escape) {
-        a = InFrame(-(f->inFrame_count) * F_WORD_SIZE);
+        a = F_InFrame(-(f->inFrame_count) * F_WORD_SIZE);
         f->inFrame_count++;
     } else {
-        a = InReg(Temp_newtemp());
+        a = F_InReg(Temp_newtemp());
         f->inReg_count++;
     }
     return a;

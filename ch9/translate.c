@@ -411,7 +411,10 @@ Tr_exp Tr_logicExp(A_oper oper, Tr_exp left, Tr_exp right)
 Tr_exp Tr_stringCmp(A_oper oper, Tr_exp left, Tr_exp right)
 {
     T_expList args = T_ExpList(unEx(left), T_ExpList(unEx(right), NULL));
-    T_exp res = F_externalCall("stringEqual", args);
+    T_exp res = F_externalCall(
+        "stringEqual", args, 
+        F_AccessList(F_InReg(F_Keep_Regs(0)), NULL)
+    );
     if (oper == A_neqOp) {
         return Tr_Ex(T_Binop(T_minus, T_Const(1), res));
     } else {
@@ -425,15 +428,19 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
     // fun_level:  function level
     // args:    function arguments
     T_expList tmp_args = NULL;
+    F_accessList tmp_formals = NULL;
+    F_accessList formals_reverse = fun_level->frame->formals;
     // args is reversly constructed, thus reverse to right order
     while (args) {
         tmp_args = T_ExpList(unEx(args->head), tmp_args);
+        tmp_formals = F_AccessList(formals_reverse->head, tmp_formals);
         args = args->tail;
+        formals_reverse = formals_reverse->tail;
     }
     // Function level is outer level of current level
     // indicating a external function call
     if (!fun_level->parent) {
-        return Tr_Ex(F_externalCall(Temp_labelstring(func), tmp_args));
+        return Tr_Ex(F_externalCall(Temp_labelstring(func), tmp_args, tmp_formals));
     }
     T_exp fp = T_Temp(F_FP());
     while (level != fun_level->parent) {
@@ -442,7 +449,7 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
         fp = F_Exp(Tr_formals(level)->head->access, fp);
         level = level->parent;
     }
-    return Tr_Ex(T_Call(T_Name(func), T_ExpList(fp, tmp_args)));
+    return Tr_Ex(T_Call(T_Name(func), T_ExpList(fp, tmp_args), tmp_formals));
 }
 Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
 {
@@ -522,7 +529,8 @@ Tr_exp Tr_recordExp(Tr_expList fields, int size)
         T_Temp(r), 
         F_externalCall(
             "check_malloc", 
-            T_ExpList(T_Const(size * F_WORD_SIZE), NULL)
+            T_ExpList(T_Const(size * F_WORD_SIZE), NULL),
+            F_AccessList(F_InReg(F_Keep_Regs(0)), NULL)
         )
     );
     while(fields) {
@@ -550,6 +558,12 @@ Tr_exp Tr_arrayExp(Tr_exp init, Tr_exp size)
                     T_ExpList(
                         T_Binop(T_mul, T_Const(F_WORD_SIZE), unEx(size)), // size
                         T_ExpList(unEx(init), NULL)  // init value   
+                    ),
+                    F_AccessList(
+                        F_InReg(F_Keep_Regs(0)), 
+                        F_AccessList(
+                            F_InReg(F_Keep_Regs(1)), NULL
+                        )
                     )
                 )
             ),

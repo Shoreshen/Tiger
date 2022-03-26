@@ -3,7 +3,6 @@
 #include "util.h"
 
 typedef struct F_access_ *F_access;
-typedef struct F_accessList_ *F_accessList;
 typedef struct F_frame_ *F_frame;
 typedef struct F_frag_ *F_frag;
 
@@ -51,9 +50,12 @@ Temp_temp F_DX();
 Temp_temp F_Keep_Regs(int i);
 T_exp F_Exp(F_access acc, T_exp framePtr);
 F_fragList F_FragList(F_frag head, F_fragList tail);
+F_accessList F_AccessList(F_access head, F_accessList tail);
+F_access F_InFrame(int offset);
+F_access F_InReg(Temp_temp reg);
 F_frag F_StringFrag(Temp_label label, char* str);
 F_frag F_ProcFrag(T_stm body, F_frame frame);
-T_exp F_externalCall(char* fun,T_expList args);
+T_exp F_externalCall(char *s, T_expList args, F_accessList accesses);
 T_stm F_procEntryExit1(F_frame frame, T_stm stm);
 void F_printFrags(FILE* out, F_fragList frags);
 

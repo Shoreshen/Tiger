@@ -98,6 +98,7 @@ struct T_exp_ {
         struct {
             T_exp fun;
             T_expList args;
+            F_accessList accesses;
         } CALL;
     } u;
 };
@@ -119,7 +120,7 @@ T_exp T_Temp(Temp_temp);
 T_exp T_Eseq(T_stm, T_exp);
 T_exp T_Name(Temp_label);
 T_exp T_Const(int);
-T_exp T_Call(T_exp, T_expList);
+T_exp T_Call(T_exp fun, T_expList args, F_accessList accesses);
 // Other
 T_relOp T_notRel(T_relOp);  /* a op b    ==     not(a notRel(op) b)  */
 T_relOp T_commute(T_relOp); /* a op b    ==    b commute(op) a       */

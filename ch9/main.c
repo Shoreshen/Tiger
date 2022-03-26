@@ -9,15 +9,24 @@
 #include "canon.h"
 #include "tree.h"
 #include "temp.h"
+#include "assem.h"
+#include "codegen.h"
 
 void do_proc(FILE *out, F_frame frame, T_stm body)
 {
     T_stmList stm_l;
+    AS_instrList iList;
     stm_l = C_linearize(body);
     stm_l = C_traceSchedule(C_basicBlocks(stm_l));
     // Printing
     fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
     printStmList(out, stm_l);
+    
+    // fprintf(out, "\n====================================================================\n");
+    
+    // fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
+    // iList = F_codegen(frame, stm_l);
+
 }
 
 int main(int argc, char **argv) {

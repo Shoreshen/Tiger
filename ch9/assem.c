@@ -58,11 +58,13 @@ AS_instrList AS_InstrList(AS_instr head, AS_instrList tail)
 /* put list b at the end of list a */
 AS_instrList AS_splice(AS_instrList a, AS_instrList b)
 {
-    AS_instrList p;
-    if (a == NULL)
+    AS_instrList p = a;
+    if (a == NULL) {
         return b;
-    for (p = a; p->tail != NULL; p = p->tail)
-        ;
+    }
+    while (p->tail != NULL) {
+        p = p->tail;
+    }
     p->tail = b;
     return a;
 }

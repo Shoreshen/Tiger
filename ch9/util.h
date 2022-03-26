@@ -78,6 +78,7 @@ typedef struct Temp_tempList_ *Temp_tempList;
 // translate.c
 typedef struct Tr_access_ *Tr_access;
 typedef struct Tr_level_ *Tr_level;
+typedef struct Tr_accessList_ *Tr_accessList;
 // tree.h
 typedef struct T_stm_ *T_stm;
 typedef struct T_exp_ *T_exp;
@@ -85,4 +86,5 @@ typedef struct T_expList_ *T_expList;
 typedef struct T_stmList_ *T_stmList;
 // frame.h
 typedef struct F_fragList_ *F_fragList;
+typedef struct F_accessList_ *F_accessList;
 #pragma endregion
