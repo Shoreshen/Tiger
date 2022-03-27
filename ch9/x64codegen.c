@@ -399,7 +399,7 @@ void munchStm(T_stm s)
             break;
         case T_JUMP:
             emit(AS_Oper(
-                "jmp `d0\n",
+                "jmp `j0\n",
                 NULL, NULL,
                 AS_Targets(s->u.JUMP.jumps)
             ));
@@ -435,7 +435,7 @@ void munchStm(T_stm s)
                     break;
             }
             emit(AS_Oper(
-                get_heap_str("%s `d0", instr),
+                get_heap_str("%s `j0", instr),
                 NULL,
                 NULL,
                 AS_Targets(Temp_LabelList(s->u.CJUMP.true, NULL))
