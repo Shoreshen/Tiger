@@ -155,17 +155,62 @@ int fill_last_tmplist(struct EffAddr *addr, Temp_temp last)
     }
     return i;
 }
-void muncArgs(T_expList args)
+Temp_tempList muncArgs(T_expList args, F_accessList accs)
 {
+    Temp_tempList list = NULL;
     if (args->tail) {
-        muncArgs(args->tail);
+        list = muncArgs(args->tail, accs->tail);
     }
-    emit(AS_Oper(
-        "push `s0",
-        NULL,
-        Temp_TempLists(munchExp(args->head), NULL),
-        NULL
-    ));
+    if (accs->head->kind == F_inReg) {
+        if (args->head->kind == T_CONST) {
+            emit(AS_Move(
+                get_heap_str("mov `d0 %d", args->head->u.CONST), 
+                Temp_TempLists(accs->head->u.reg, NULL), 
+                NULL
+            ));
+        } else {
+            emit(AS_Oper(
+                "mov `d0 `s0", 
+                Temp_TempLists(accs->head->u.reg, NULL), 
+                Temp_TempLists(munchExp(args->head), NULL), 
+                NULL
+            ));
+        }
+        list = Temp_TempList(accs->head->u.reg, list);
+    } else if (accs->head->kind == F_inFrame) {
+        if (args->head->kind == T_CONST) {
+            emit(AS_Oper(
+                get_heap_str("push %d", args->head->u.CONST), 
+                NULL, NULL, NULL
+            ));
+        } else {
+            emit(AS_Oper(
+                "push `s0", 
+                Temp_TempLists(F_SP(), NULL), 
+                Temp_TempLists(munchExp(args->head), NULL), 
+                NULL
+            ));
+        }
+    } else {
+        assert(0);
+    }
+    return list;
+}
+void munchArgRestore(T_expList args)
+{
+    int count = 0;
+    while (args) {
+        count++;
+        args = args->tail;
+    }
+    if (count) {
+        emit(AS_Oper(
+            get_heap_str("add `s0 %d", count * F_WORD_SIZE), 
+            Temp_TempLists(F_SP(), NULL), 
+            NULL, 
+            NULL
+        ));
+    }
 }
 Temp_temp munchExp(T_exp e)
 {
@@ -283,6 +328,8 @@ Temp_temp munchExp(T_exp e)
                     ));
                     return F_AX();
                 }
+                default:
+                    assert(0);
             }
         }
         case T_MEM: {
@@ -317,9 +364,20 @@ Temp_temp munchExp(T_exp e)
                 Temp_TempLists(r, NULL),
                 NULL
             ));
+            return r;
         }
         case T_CALL: {
-            muncArgs(e->u.CALL.args);
+            Temp_temp r = munchExp(e->u.CALL.fun);
+            Temp_tempList list = muncArgs(e->u.CALL.args, e->u.CALL.accs);
+
+            emit(AS_Oper(
+                get_heap_str("call %s", Temp_labelstring(e->u.CALL.fun->u.NAME)),
+                F_callersaves(),
+                Temp_TempList(r, list),
+                NULL
+            ));
+            munchArgRestore(e->u.CALL.args);
+            return F_RV();
         }
         default:
             assert(0);

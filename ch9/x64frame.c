@@ -7,19 +7,8 @@
 #define F_KEEP 6 // keep 6 formal param in registers
 const int F_WORD_SIZE = 8; // x64 architecture
 
-struct F_access_ {
-    enum {
-        inFrame, 
-        inReg
-    } kind;
-    union {
-        int offset;
-        Temp_temp reg;
-    } u;
-};
-
 T_exp F_Exp(F_access acc, T_exp framePtr) {
-    if (acc->kind == inFrame) {
+    if (acc->kind == F_inFrame) {
         return T_Mem(T_Binop(T_plus, framePtr, T_Const(acc->u.offset)));
     } else {
         return T_Temp(acc->u.reg);
@@ -123,16 +112,28 @@ F_frag F_ProcFrag(T_stm body, F_frame frame)
     f->u.proc.frame = frame;
     return f;
 }
-T_exp F_externalCall(char *s, T_expList args, F_accessList accesses) {
+T_exp F_externalCall(char *s, T_expList args, F_accessList accs) {
     // cdcel need to 
-    return T_Call(T_Name(Temp_namedlabel(s)), args, accesses);
+    return T_Call(T_Name(Temp_namedlabel(s)), args, accs);
 }
 T_stm F_procEntryExit1(F_frame frame, T_stm stm)
 {
     return stm;
 }
+static Temp_tempList calleeSaves;
+Temp_tempList F_calleesaves()
+{
+    return NULL;
+}
+static Temp_tempList callerSaves;
+Temp_tempList F_callersaves()
+{
+    if (callerSaves == NULL) {
+        calleeSaves = Temp_TempLists(F_RV(), F_FP(), NULL);
+    }
+    return calleeSaves;
+}
 static Temp_tempList returnSink = NULL;
-
 AS_instrList F_procEntryExit2(AS_instrList body) {
     Temp_tempList calleeSaves = NULL;
     if (!returnSink) {
@@ -141,7 +142,7 @@ AS_instrList F_procEntryExit2(AS_instrList body) {
             F_RV(),
             Temp_TempList(
                 F_SP(), 
-                calleeSaves
+                F_calleesaves()
             )
         );
     }
@@ -181,7 +182,7 @@ void F_printFrags(FILE* out, F_fragList frags)
 F_access F_InFrame(int offset)
 {
     F_access a = checked_malloc(sizeof(*a));
-    a->kind = inFrame;
+    a->kind = F_inFrame;
     a->u.offset = offset;
     return a;
 }
@@ -189,7 +190,7 @@ F_access F_InFrame(int offset)
 F_access F_InReg(Temp_temp reg)
 {
     F_access a = checked_malloc(sizeof(*a));
-    a->kind = inReg;
+    a->kind = F_inReg;
     a->u.reg = reg;
     return a;
 }

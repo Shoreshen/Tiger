@@ -17,6 +17,16 @@ struct F_accessList_ {
     F_access head;
     F_accessList tail;
 };
+struct F_access_ {
+    enum {
+        F_inFrame, 
+        F_inReg
+    } kind;
+    union {
+        int offset;
+        Temp_temp reg;
+    } u;
+};
 struct F_frag_ { 
     enum {
         F_stringFrag, 
@@ -55,7 +65,9 @@ F_access F_InFrame(int offset);
 F_access F_InReg(Temp_temp reg);
 F_frag F_StringFrag(Temp_label label, char* str);
 F_frag F_ProcFrag(T_stm body, F_frame frame);
-T_exp F_externalCall(char *s, T_expList args, F_accessList accesses);
+Temp_tempList F_calleesaves();
+Temp_tempList F_callersaves();
+T_exp F_externalCall(char *s, T_expList args, F_accessList accs);
 T_stm F_procEntryExit1(F_frame frame, T_stm stm);
 void F_printFrags(FILE* out, F_fragList frags);
 
