@@ -134,7 +134,7 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
                     exit(1);
                 }
                 return expTy(
-                    Tr_callExp(fun->u.fun.label, level, fun->u.fun.level, tr_args), 
+                    Tr_callExp(fun->u.fun.label, level, fun->u.fun.level, tr_args, e->u.call.func), 
                     actual_ty(fun->u.fun.result)
                 );
             } else {

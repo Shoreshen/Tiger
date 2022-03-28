@@ -2,6 +2,7 @@
 #include "frame.h"
 #include "temp.h"
 #include "tree.h"
+#include "symbol.h"
 
 #pragma region internal struct & statics
 typedef struct patchList_ *patchList;
@@ -413,7 +414,7 @@ Tr_exp Tr_stringCmp(A_oper oper, Tr_exp left, Tr_exp right)
     T_expList args = T_ExpList(unEx(left), T_ExpList(unEx(right), NULL));
     T_exp res = F_externalCall(
         "stringEqual", args, 
-        F_AccessList(F_InReg(F_Keep_Regs(0)), NULL)
+        F_AccessList(F_InReg(F_Keep_Regs(0)), F_AccessList(F_InReg(F_Keep_Regs(1)), NULL))
     );
     if (oper == A_neqOp) {
         return Tr_Ex(T_Binop(T_minus, T_Const(1), res));
@@ -421,7 +422,7 @@ Tr_exp Tr_stringCmp(A_oper oper, Tr_exp left, Tr_exp right)
         return Tr_Ex(res);
     }
 }
-Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expList args)
+Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expList args, S_symbol name)
 {
     // label:   function label
     // level:   current level
@@ -430,17 +431,22 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
     T_expList tmp_args = NULL;
     F_accessList tmp_formals = NULL;
     F_accessList formals_reverse = fun_level->frame->formals;
+    int regCount = 0, memCount = 0;
     // args is reversly constructed, thus reverse to right order
     while (args) {
         tmp_args = T_ExpList(unEx(args->head), tmp_args);
-        tmp_formals = F_AccessList(formals_reverse->head, tmp_formals);
+        if (formals_reverse) {
+            tmp_formals = F_AccessList(formals_reverse->head, tmp_formals);
+            formals_reverse = formals_reverse->tail;
+        } else {
+            tmp_formals = F_AccessList(F_GetAccess(&regCount, &memCount, 0), tmp_formals);
+        }
         args = args->tail;
-        formals_reverse = formals_reverse->tail;
     }
     // Function level is outer level of current level
     // indicating a external function call
     if (!fun_level->parent) {
-        return Tr_Ex(F_externalCall(Temp_labelstring(func), tmp_args, tmp_formals));
+        return Tr_Ex(F_externalCall(S_name(name), tmp_args, tmp_formals));
     }
     T_exp fp = T_Temp(F_FP());
     while (level != fun_level->parent) {
@@ -449,7 +455,12 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
         fp = F_Exp(Tr_formals(level)->head->access, fp);
         level = level->parent;
     }
-    return Tr_Ex(T_Call(T_Name(func), T_ExpList(fp, tmp_args), tmp_formals));
+    return Tr_Ex(T_Call(
+        T_Name(func), 
+        T_ExpList(fp, tmp_args), // First parameter for internal call is fp
+        F_AccessList(F_InFrame(F_WORD_SIZE), tmp_formals), 
+        name
+    ));
 }
 Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
 {

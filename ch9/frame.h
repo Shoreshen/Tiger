@@ -65,6 +65,7 @@ F_access F_InFrame(int offset);
 F_access F_InReg(Temp_temp reg);
 F_frag F_StringFrag(Temp_label label, char* str);
 F_frag F_ProcFrag(T_stm body, F_frame frame);
+F_access F_GetAccess(int *regCount, int *memCount, int escape);
 Temp_tempList F_calleesaves();
 Temp_tempList F_callersaves();
 T_exp F_externalCall(char *s, T_expList args, F_accessList accs);

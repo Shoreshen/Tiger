@@ -147,13 +147,14 @@ T_exp T_Const(int consti)
     e->u.CONST = consti;
     return e;
 }
-T_exp T_Call(T_exp fun, T_expList args, F_accessList accs)
+T_exp T_Call(T_exp fun, T_expList args, F_accessList accs, S_symbol name)
 {
     T_exp e = checked_malloc(sizeof(*e));
     e->kind = T_CALL;
     e->u.CALL.fun = fun;
     e->u.CALL.args = args;
     e->u.CALL.accs = accs;
+    e->u.CALL.name = name;
     return e;
 }
 #pragma endregion

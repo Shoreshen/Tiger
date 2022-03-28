@@ -73,16 +73,24 @@ Temp_temp F_Keep_Regs(int i)
         switch (i) {
             case 0:
                 reg = "rdi";
+                break;
             case 1:
                 reg = "rsi";
+                break;
             case 2:
                 reg = "rdx";
+                break;
             case 3:
                 reg = "rci";
+                break;
             case 4:
                 reg = "r8";
+                break;
             case 5:
                 reg = "r9";
+                break;
+            default:
+                assert(0);
         }
         f_regs[i] = Temp_tempstring(reg);
     }
@@ -114,7 +122,7 @@ F_frag F_ProcFrag(T_stm body, F_frame frame)
 }
 T_exp F_externalCall(char *s, T_expList args, F_accessList accs) {
     // cdcel need to 
-    return T_Call(T_Name(Temp_namedlabel(s)), args, accs);
+    return T_Call(T_Name(Temp_namedlabel(s)), args, accs, NULL);
 }
 T_stm F_procEntryExit1(F_frame frame, T_stm stm)
 {
@@ -202,7 +210,29 @@ F_accessList F_AccessList(F_access head, F_accessList tail)
     f->tail = tail;
     return f;
 }
-
+F_access F_GetAccess(int *regCount, int *memCount, int escape)
+{
+    if(*regCount < F_KEEP && !escape) {
+        (*regCount)++;
+        return F_InReg(F_Keep_Regs(*regCount));
+    } else {
+        /* 
+            In x64:
+            1. push formals (including rbp)
+            2. call
+            3. rsp->rbp
+            while rbp is the frame pointer:
+            ...
+            rbp -  8: first local variable
+            rbp     : return addrss
+            rbp +  8: static link
+            rbp + 16: first non-escape arg
+            ...
+        */
+        (*memCount)++;
+        return F_InFrame(((*memCount) - 1) * F_WORD_SIZE);
+    }
+}
 F_frame F_newFrame(Temp_label name, U_boolList formals)
 {
     F_frame f = checked_malloc(sizeof(*f));
@@ -213,26 +243,10 @@ F_frame F_newFrame(Temp_label name, U_boolList formals)
     f->inFrame_count = 1; // First resarve for return address
 
     while (formals) {
-        if (f->inReg_count < F_KEEP && !(formals->head)) {
-            f->formals = F_AccessList(F_InReg(F_Keep_Regs(f->inReg_count)), f->formals);
-            f->inReg_count++;
-        } else {
-            /* 
-                In x64:
-                1. push formals (including rbp)
-                2. call
-                3. rsp->rbp
-                while rbp is the frame pointer:
-                ...
-                rbp -  8: first local variable
-                rbp     : return addrss
-                rbp +  8: static link
-                rbp + 16: first non-escape arg
-                ...
-            */
-            f->formals = F_AccessList(F_InFrame((f->inFrame_count * F_WORD_SIZE)), f->formals);
-            f->inFrame_count++;
-        }
+        f->formals = F_AccessList(
+            F_GetAccess(&(f->inReg_count), &(f->inFrame_count), formals->head), 
+            f->formals
+        );
         formals = formals->tail;
     }
 
