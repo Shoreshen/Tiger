@@ -200,12 +200,14 @@ Temp_tempList muncArgs(T_expList args, F_accessList accs)
     }
     return list;
 }
-void munchArgRestore(T_expList args)
+void munchArgRestore(F_accessList accs)
 {
     int count = 0;
-    while (args) {
-        count++;
-        args = args->tail;
+    while (accs) {
+        if (accs->head->kind == F_inFrame) {
+            count++;
+        }
+        accs = accs->tail;
     }
     if (count) {
         emit(AS_Oper(
@@ -371,16 +373,15 @@ Temp_temp munchExp(T_exp e)
             return r;
         }
         case T_CALL: {
-            Temp_temp r = munchExp(e->u.CALL.fun);
             Temp_tempList list = muncArgs(e->u.CALL.args, e->u.CALL.accs);
 
             emit(AS_Oper(
                 get_heap_str("call %s\n", Temp_labelstring(e->u.CALL.fun->u.NAME)),
                 F_callersaves(),
-                Temp_TempList(r, list),
+                list,
                 NULL
             ));
-            munchArgRestore(e->u.CALL.args);
+            munchArgRestore(e->u.CALL.accs);
             return F_RV();
         }
         default:

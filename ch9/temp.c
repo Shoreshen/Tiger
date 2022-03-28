@@ -19,7 +19,7 @@ Temp_temp Temp_tempstring(char* name)
     // Allocate temp struct
     Temp_temp p = checked_malloc(sizeof(*p));
     p->num = temps++;
-    Temp_enter(Temp_name(), p, get_heap_str("%s(%d)", name, p->num));
+    Temp_enter(Temp_name(), p, get_heap_str("%s::t%d", name, p->num));
     return p;
 }
 

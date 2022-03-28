@@ -448,6 +448,10 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
     if (!fun_level->parent) {
         return Tr_Ex(F_externalCall(S_name(name), tmp_args, tmp_formals));
     }
+    if (formals_reverse) {
+        // Append FP to accesses
+        tmp_formals = F_AccessList(formals_reverse->head, tmp_formals);
+    }
     T_exp fp = T_Temp(F_FP());
     while (level != fun_level->parent) {
         // Get last(outside) fp from current fp
@@ -455,12 +459,7 @@ Tr_exp Tr_callExp(Temp_label func, Tr_level level, Tr_level fun_level, Tr_expLis
         fp = F_Exp(Tr_formals(level)->head->access, fp);
         level = level->parent;
     }
-    return Tr_Ex(T_Call(
-        T_Name(func), 
-        T_ExpList(fp, tmp_args), // First parameter for internal call is fp
-        F_AccessList(F_InFrame(F_WORD_SIZE), tmp_formals), 
-        name
-    ));
+    return Tr_Ex(T_Call(T_Name(func), T_ExpList(fp, tmp_args), tmp_formals, name));
 }
 Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
 {
