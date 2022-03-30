@@ -102,7 +102,7 @@ run_ch9:ch9.out
 	./$< $$file
 # Clean =========================================================================================
 clean:
-	-rm *.out \
+	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log\
 	    ./ch2/*.yy.c \
 	    ./ch3/*.yy.c ./ch3/*.tab.* \
 	    ./ch4/*.yy.c ./ch4/*.tab.* \
@@ -112,6 +112,11 @@ clean:
 	    ./ch8/*.yy.c ./ch8/*.tab.* \
 		./ch9/*.yy.c ./ch9/*.tab.*
 PHONY += clean
+# Assem =========================================================================================
+./nasm/test.com:./nasm/test.asm
+	nasm -f elf64 ./nasm/test.asm -o ./nasm/test.com
+test_nasm:./nasm/test.com
+	objdump -D ./nasm/test.com > ./nasm/test.s
 # GitHub ========================================================================================
 sub_pull:
 	git submodule foreach --recursive 'git pull'

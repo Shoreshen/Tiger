@@ -214,7 +214,7 @@ F_access F_GetAccess(int *regCount, int *memCount, int escape)
 {
     if(*regCount < F_KEEP && !escape) {
         (*regCount)++;
-        return F_InReg(F_Keep_Regs(*regCount));
+        return F_InReg(F_Keep_Regs(*regCount - 1));
     } else {
         /* 
             In x64:
