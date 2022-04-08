@@ -100,6 +100,17 @@ run_ch9:ch9.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
+# ch10 ===========================================================================================
+./ch10/tiger.tab.c ./ch10/tiger.tab.h: ./ch10/tiger.y
+	bison -d -Wcounterexamples -o ./ch10/tiger.tab.c $<
+./ch10/tiger.yy.c:./ch10/tiger.tab.h ./ch10/tiger.l
+	flex --outfile=$@ ./ch10/tiger.l
+ch10.out:./ch10/tiger.yy.c ./ch10/tiger.tab.c ./ch10/tiger.tab.h ./ch10/*.c
+	gcc $(CFLAGS) ./ch10/*.c -o $@
+run_ch10:ch10.out
+	@echo "Please type in file names: "; \
+	read file; \
+	./$< $$file
 # Clean =========================================================================================
 clean:
 	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log\
@@ -110,7 +121,8 @@ clean:
 	    ./ch6/*.yy.c ./ch6/*.tab.* \
 	    ./ch7/*.yy.c ./ch7/*.tab.* \
 	    ./ch8/*.yy.c ./ch8/*.tab.* \
-		./ch9/*.yy.c ./ch9/*.tab.*
+		./ch9/*.yy.c ./ch9/*.tab.* \
+		./ch10/*.yy.c ./ch10/*.tab.*
 PHONY += clean
 # Assem =========================================================================================
 ./nasm/test.com:./nasm/test.asm

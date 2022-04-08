@@ -2,24 +2,10 @@
 #include "symbol.h"
 #include "temp.h"
 #include "tree.h"
-#include "absyn.h"
 #include "assem.h"
 #include "frame.h"
 #include "graph.h"
 #include "env.h"
-
-struct G_graph_ {
-    int nodecount;
-    G_nodeList mynodes, mylast;
-};
-
-struct G_node_ {
-    G_graph mygraph;
-    int mykey;
-    G_nodeList succs;
-    G_nodeList preds;
-    void *info;
-};
 
 G_graph G_Graph(void)
 {

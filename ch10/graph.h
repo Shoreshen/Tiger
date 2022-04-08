@@ -7,6 +7,19 @@ struct G_nodeList_ {
     G_nodeList tail;
 };
 
+struct G_graph_ {
+    int nodecount;
+    G_nodeList mynodes, mylast;
+};
+
+struct G_node_ {
+    G_graph mygraph;
+    int mykey;
+    G_nodeList succs;
+    G_nodeList preds;
+    void *info;
+};
+
 /* Make a new graph */
 G_graph G_Graph(void);
 /* Make a new node in graph "g", with associated "info" */
