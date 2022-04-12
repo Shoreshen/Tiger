@@ -26,13 +26,18 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
     stm_l = C_traceSchedule(C_basicBlocks(stm_l));
     fprintf(out, "**********************************\n");
     fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
+
     printStmList(out, stm_l);
     
     fprintf(out, "**********************************\n");
-    
     fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
+
     iList = F_codegen(frame, stm_l);
     AS_printInstrList(out, iList, Temp_name());
+
+    // fprintf(out, "**********************************\n");
+    // fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
+
     fprintf(out, "====================================================================\n");
 }
 

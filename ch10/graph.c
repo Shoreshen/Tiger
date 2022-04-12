@@ -151,7 +151,10 @@ static int outDegree(G_node n)
     return deg;
 }
 
-int G_degree(G_node n) { return inDegree(n) + outDegree(n); }
+int G_degree(G_node n) 
+{ 
+    return inDegree(n) + outDegree(n); 
+}
 
 /* put list b at the back of list a and return the concatenated list */
 static G_nodeList cat(G_nodeList a, G_nodeList b)
@@ -166,23 +169,28 @@ static G_nodeList cat(G_nodeList a, G_nodeList b)
 
 /* create the adjacency list for node n by combining the successor and
  * predecessor lists of node n */
-G_nodeList G_adj(G_node n) { return cat(G_succ(n), G_pred(n)); }
+G_nodeList G_adj(G_node n) 
+{ 
+    return cat(G_succ(n), G_pred(n)); 
+}
 
-void *G_nodeInfo(G_node n) { return n->info; }
+void *G_nodeInfo(G_node n) 
+{ 
+    return n->info; 
+}
 
 /* G_node table functions */
-
-E_stack G_empty(void)
+G_table G_empty(void)
 {
     return E_empty_env();
 }
 
-void G_enter(E_stack t, G_node node, void *value)
+void G_enter(G_table t, G_node node, void *value)
 {
     E_enter(t, node, value);
 }
 
-void *G_look(E_stack t, G_node node)
+void *G_look(G_table t, G_node node)
 {
     return E_look(t, node);
 }

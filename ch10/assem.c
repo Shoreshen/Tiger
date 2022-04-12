@@ -93,9 +93,7 @@ static Temp_label nthLabel(Temp_labelList list, int i)
  * and replacing `d `s and `j stuff.
  * Last param is function to use to determine what to do with each temp.
  */
-static void format(char *result, char *assem,
-                   Temp_tempList dst, Temp_tempList src,
-                   AS_targets jumps, E_stack m)
+void format(char *result, char *assem, Temp_tempList dst, Temp_tempList src, AS_targets jumps, Temp_map m)
 {
     char *p;
     int i = 0; /* offset to result char* */
@@ -138,7 +136,7 @@ static void format(char *result, char *assem,
     result[i] = '\0';
 }
 
-void AS_print(FILE *out, AS_instr i, E_stack m)
+void AS_print(FILE *out, AS_instr i, Temp_map m)
 {
     char r[200]; /* result */
     switch (i->kind)
@@ -160,7 +158,7 @@ void AS_print(FILE *out, AS_instr i, E_stack m)
 }
 
 /* c should be COL_color; temporarily it is not */
-void AS_printInstrList(FILE *out, AS_instrList iList, E_stack m)
+void AS_printInstrList(FILE *out, AS_instrList iList, Temp_map m)
 {
     for (; iList; iList = iList->tail) {
         AS_print(out, iList->head, m);

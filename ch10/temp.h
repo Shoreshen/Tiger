@@ -25,8 +25,13 @@ Temp_tempList Temp_TempLists(Temp_temp temps, ...);
 Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t);
 char* Temp_labelstring(Temp_label s);
 
-void Temp_layerMap(E_stack* stack);
-E_stack Temp_empty(void);
-void Temp_enter(E_stack m, Temp_temp t, char* s);
-char* Temp_look(E_stack m, Temp_temp t);
-E_stack Temp_name();
+void Temp_layerMap(Temp_map* stack);
+Temp_map Temp_empty(void);
+void Temp_enter(Temp_map m, Temp_temp t, char* s);
+char* Temp_look(Temp_map m, Temp_temp t);
+Temp_map Temp_name();
+
+Temp_tempList Temp_union(Temp_tempList a, Temp_tempList b);
+Temp_tempList Temp_intersect(Temp_tempList a, Temp_tempList b);
+Temp_tempList Temp_minus(Temp_tempList a, Temp_tempList b);
+int Temp_equal(Temp_tempList a, Temp_tempList b);

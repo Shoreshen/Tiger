@@ -70,6 +70,9 @@ G_graph FG_AssemFlowGraph(AS_instrList il)
         Temp_labelList ll = i->u.OPER.jumps->labels;
         while (ll) {
             G_node n_jmp = (G_node) E_look(L_map, ll->head);
+            if (!n_jmp) {
+                assert(0);
+            }
             G_addEdge(n, n_jmp);
             ll = ll->tail;
         }

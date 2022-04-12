@@ -64,10 +64,10 @@ G_nodeList G_adj(G_node n);
 void *G_nodeInfo(G_node n);
 
 /* Make a new table */
-E_stack G_empty(void);
+G_table G_empty(void);
 
 /* Enter the mapping "node"->"value" to the table "t" */
-void G_enter(E_stack t, G_node node, void *value);
+void G_enter(G_table t, G_node node, void *value);
 
 /* Tell what "node" maps to in table "t" */
-void *G_look(E_stack t, G_node node);
+void *G_look(G_table t, G_node node);
