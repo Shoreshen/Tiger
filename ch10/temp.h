@@ -27,8 +27,8 @@ char* Temp_labelstring(Temp_label s);
 
 void Temp_layerMap(Temp_map* stack);
 Temp_map Temp_empty(void);
-void Temp_enter(Temp_map m, Temp_temp t, char* s);
-char* Temp_look(Temp_map m, Temp_temp t);
+void Temp_enter(Temp_map m, Temp_temp t, void* s);
+void* Temp_look(Temp_map m, Temp_temp t);
 Temp_map Temp_name();
 
 Temp_tempList Temp_union(Temp_tempList a, Temp_tempList b);

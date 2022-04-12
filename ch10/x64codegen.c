@@ -174,17 +174,16 @@ Temp_tempList muncArgs(T_expList args, F_accessList accs, Temp_tempList* tmp_reg
             Temp_TempLists(accs->head->u.reg, NULL)
         ));
         if (args->head->kind == T_CONST) {
-            emit(AS_Move(
+            emit(AS_Oper( //Only form of `mov reg, reg` is decided as AS_Move
                 get_heap_str("mov `d0, %d\n", args->head->u.CONST), 
                 Temp_TempLists(accs->head->u.reg, NULL), 
-                NULL
+                NULL, NULL
             ));
         } else {
-            emit(AS_Oper(
+            emit(AS_Move(
                 "mov `d0, `s0\n", 
                 Temp_TempLists(accs->head->u.reg, NULL), 
-                Temp_TempLists(munchExp(args->head), NULL), 
-                NULL
+                Temp_TempLists(munchExp(args->head), NULL)
             ));
         }
         list = Temp_TempList(accs->head->u.reg, list);
@@ -245,17 +244,17 @@ Temp_temp munchExp(T_exp e)
                 case T_plus:
                     if (left->kind == T_CONST) {
                         r_src = munchExp(right);
-                        emit(AS_Move(
+                        emit(AS_Oper(
                             get_heap_str("mov `d0, %d\n",left->u.CONST),
                             Temp_TempList(r_dst, NULL),
-                            NULL
+                            NULL, NULL
                         ));
                     } else if (right->kind == T_CONST) {
                         r_src = munchExp(left);
-                        emit(AS_Move(
+                        emit(AS_Oper(
                             get_heap_str("mov `d0, %d\n",right->u.CONST),
                             Temp_TempList(r_dst, NULL),
-                            NULL
+                            NULL, NULL
                         ));
                     } else {
                         r_src = munchExp(right);
@@ -275,10 +274,10 @@ Temp_temp munchExp(T_exp e)
                 case T_minus:
                     r_src = munchExp(right);
                     if (left->kind == T_CONST) {
-                        emit(AS_Move(
+                        emit(AS_Oper(
                             get_heap_str("mov `d0, %d\n",left->u.CONST),
                             Temp_TempList(r_dst, NULL),
-                            NULL
+                            NULL, NULL
                         ));
                     } else {
                         emit(AS_Move(
@@ -309,17 +308,17 @@ Temp_temp munchExp(T_exp e)
                     ));
                     if (left->kind == T_CONST) {
                         r_src = munchExp(right);
-                        emit(AS_Move(
+                        emit(AS_Oper(
                             get_heap_str("mov `d0, %d\n", left->u.CONST),
                             Temp_TempLists(F_AX(), NULL),
-                            NULL
+                            NULL, NULL
                         ));
                     } else if (right->kind == T_CONST){
                         r_src = munchExp(left);
-                        emit(AS_Move(
+                        emit(AS_Oper(
                             get_heap_str("mov `d0, %d\n", right->u.CONST),
                             Temp_TempLists(F_AX(), NULL),
-                            NULL
+                            NULL, NULL
                         ));
                     } else {
                         r_src = munchExp(right);
@@ -368,10 +367,10 @@ Temp_temp munchExp(T_exp e)
                     ));
                     r_src = munchExp(right);
                     if (left->kind == T_CONST) {
-                        emit(AS_Move(
+                        emit(AS_Oper(
                             get_heap_str("mov `d0, %d\n", left->u.CONST),
                             Temp_TempLists(F_AX(), NULL),
-                            NULL
+                            NULL, NULL
                         ));
                     } else {
                         emit(AS_Move(
@@ -415,10 +414,11 @@ Temp_temp munchExp(T_exp e)
             };
             int pos = x86_eff_addr(e->u.MEM, &addr);
             Temp_temp r = Temp_newtemp();
-            emit(AS_Move(
+            emit(AS_Oper(
                 get_heap_str("mov `d0, [%s]\n", addr.assem),
                 Temp_TempLists(r, NULL),
-                addr.src
+                addr.src,
+                NULL
             ));
             return r;
         }
@@ -426,19 +426,19 @@ Temp_temp munchExp(T_exp e)
             return e->u.TEMP;
         case T_NAME: {
             Temp_temp r = Temp_newtemp();
-            emit(AS_Move(
+            emit(AS_Oper(
                 get_heap_str("mov `d0, %s\n", S_name(e->u.NAME)),
                 Temp_TempLists(r, NULL),
-                NULL
+                NULL, NULL
             ));
             return r;
         }
         case T_CONST: {
             Temp_temp r = Temp_newtemp();
-            emit(AS_Move(
+            emit(AS_Oper(
                 get_heap_str("mov `d0, %d\n", e->u.CONST),
                 Temp_TempLists(r, NULL),
-                NULL
+                NULL, NULL
             ));
             return r;
         }
@@ -527,10 +527,11 @@ void munchStm(T_stm s)
                 };
                 int pos = x86_eff_addr(dst->u.MEM, &addr);
                 int check = fill_last_tmplist(&addr, munchExp(s->u.MOVE.src));
-                emit(AS_Move(
+                emit(AS_Oper(
                     get_heap_str("mov [%s], `s%d\n", addr.assem, pos),
                     NULL,
-                    addr.src
+                    addr.src,
+                    NULL
                 ));
             } else if (dst->kind == T_TEMP) {
                 emit(AS_Move(

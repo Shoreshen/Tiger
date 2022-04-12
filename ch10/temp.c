@@ -82,12 +82,12 @@ Temp_map Temp_empty(void)
     return (Temp_map)E_empty_env();
 }
 
-void Temp_enter(Temp_map m, Temp_temp t, char* s)
+void Temp_enter(Temp_map m, Temp_temp t, void* s)
 {
     TAB_enter(&m->table, t, s);
 }
 
-char* Temp_look(Temp_map m, Temp_temp t)
+void* Temp_look(Temp_map m, Temp_temp t)
 {
     return E_look(m, t);
 }

@@ -10,7 +10,7 @@ struct AS_instr_ {
 	enum {
 		I_OPER,
 		I_LABEL,
-		I_MOVE
+		I_MOVE //Has to be the form of `mov reg, reg`
 	} kind;
 	union {
 		struct {
