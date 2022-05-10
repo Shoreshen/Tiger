@@ -137,7 +137,7 @@ static Temp_tempList callerSaves;
 Temp_tempList F_callersaves()
 {
     if (callerSaves == NULL) {
-        calleeSaves = Temp_TempLists(F_RV(), F_FP(), NULL);
+        calleeSaves = Temp_TempLists(F_RV(), NULL);
     }
     return calleeSaves;
 }

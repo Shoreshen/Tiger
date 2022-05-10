@@ -24,7 +24,7 @@ Live_moveList Live_MoveList(G_node src, G_node dst, Live_moveList tail)
     return p;
 }
 
-G_node enterLookupMap(Temp_map m, G_graph g, Temp_temp t)
+G_node findOrCreateNode(Temp_map m, G_graph g, Temp_temp t)
 {
     G_node node = Temp_look(m, t);
     if (node) {
@@ -50,12 +50,10 @@ void calc_liveMap(G_graph flow, G_table in, G_table out)
     Temp_tempList last_ins = NULL, last_outs = NULL;
     AS_instr instr = NULL;
 
-    while (flag)
-    {
+    while (flag) {
         nodes = G_nodes(flow);
         flag = FALSE;
-        while (nodes)
-        {
+        while (nodes) {
             flowNode = nodes->head;
             instr = (AS_instr)G_nodeInfo(flowNode);
             ins = (Temp_tempList)G_look(in, flowNode);
@@ -99,8 +97,8 @@ struct Live_graph solveLiveness(G_graph flow, G_table in, G_table out)
                 printf("Error: move instruction has more than one source or destination.\n");
                 assert(0);
             }
-            n_src = enterLookupMap(t_map, lg.graph, t_src->head);
-            n_dst = enterLookupMap(t_map, lg.graph, t_dst->head);
+            n_src = findOrCreateNode(t_map, lg.graph, t_src->head);
+            n_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
             lg.moves = Live_MoveList(n_src, n_dst, lg.moves);
             if (n_src != n_dst && !G_goesTo(n_src, n_dst) && !G_goesTo(n_dst, n_src)) {
                 G_addEdge(n_src, n_dst);
@@ -109,9 +107,9 @@ struct Live_graph solveLiveness(G_graph flow, G_table in, G_table out)
             t_src = FG_use(node);
             t_dst = FG_def(node);
             while (t_src) {
-                n_src = enterLookupMap(t_map, lg.graph, t_src->head);
+                n_src = findOrCreateNode(t_map, lg.graph, t_src->head);
                 while (t_dst) {
-                    n_dst = enterLookupMap(t_map, lg.graph, t_dst->head);
+                    n_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
                     if (n_src != n_dst && !G_goesTo(n_src, n_dst) && !G_goesTo(n_dst, n_src)) {
                         G_addEdge(n_src, n_dst);
                     }
