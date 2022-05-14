@@ -9,6 +9,7 @@
 #include "assem.h"
 #include "frame.h"
 #include "errormsg.h"
+#include "env.h"
 
 AS_targets AS_Targets(Temp_labelList labels)
 {
@@ -93,7 +94,7 @@ static Temp_label nthLabel(Temp_labelList list, int i)
  * and replacing `d `s and `j stuff.
  * Last param is function to use to determine what to do with each temp.
  */
-void format(char *result, char *assem, Temp_tempList dst, Temp_tempList src, AS_targets jumps, Temp_map m)
+void format(char *result, char *assem, Temp_tempList dst, Temp_tempList src, AS_targets jumps, E_map m)
 {
     char *p;
     int i = 0; /* offset to result char* */
@@ -136,7 +137,7 @@ void format(char *result, char *assem, Temp_tempList dst, Temp_tempList src, AS_
     result[i] = '\0';
 }
 
-void AS_print(FILE *out, AS_instr i, Temp_map m)
+void AS_print(FILE *out, AS_instr i, E_map m)
 {
     char r[200]; /* result */
     switch (i->kind)
@@ -158,7 +159,7 @@ void AS_print(FILE *out, AS_instr i, Temp_map m)
 }
 
 /* c should be COL_color; temporarily it is not */
-void AS_printInstrList(FILE *out, AS_instrList iList, Temp_map m)
+void AS_printInstrList(FILE *out, AS_instrList iList, E_map m)
 {
     for (; iList; iList = iList->tail) {
         AS_print(out, iList->head, m);
@@ -173,4 +174,93 @@ AS_proc AS_Proc(char *p, AS_instrList b, char *e)
     proc->body = b;
     proc->epilog = e;
     return proc;
+}
+
+AS_instrList AS_instrUnion(AS_instrList ia, AS_instrList ib)
+{
+    if (!ia) {
+        return ib;
+    }
+    if (!ib) {
+        return ia;
+    }
+
+    E_map tmp_map = E_empty_env();
+    AS_instrList il = NULL;
+    
+    while (ia) {
+        E_enter(tmp_map, ia->head, "valid");
+        il = AS_InstrList(ia->head, il);
+        ia = ia->tail;
+    }
+    
+    while (ib) {
+        if (!E_look(tmp_map, ib->head)) {
+            il =AS_InstrList(ib->head, il);
+        }
+        ib = ib->tail;
+    }
+    E_clear(tmp_map);
+    return il;
+}
+AS_instrList AS_instrMinus(AS_instrList ia, AS_instrList ib)
+{
+    if (!ia || !ib) {
+        // ia empty, return empty
+        // ib empty, return ia
+        return ia;
+    }
+
+    E_map tmp_map = E_empty_env();
+    AS_instrList il = NULL;
+    
+    while (ib) {
+        E_enter(tmp_map, ib->head, "valid");
+        ib = ib->tail;
+    }
+    
+    while (ia) {
+        if (!E_look(tmp_map, ia->head)) {
+            il = AS_InstrList(ia->head, il);
+        }
+        ia = ia->tail;
+    }
+    E_clear(tmp_map);
+    return il;
+}
+AS_instrList AS_instrIntersect(AS_instrList ia, AS_instrList ib)
+{
+    if (!ia || !ib) {
+        return NULL;
+    }
+
+    E_map tmp_map = E_empty_env();
+    AS_instrList il = NULL;
+
+    while (ib) {
+        E_enter(tmp_map, ib->head, "valid");
+        ib = ib->tail;
+    }
+
+    while (ia) {
+        if (E_look(tmp_map, ia->head)) {
+            il = AS_InstrList(ia->head, il);
+        }
+        ia = ia->tail;
+    }
+    E_clear(tmp_map);
+    return il;
+}
+int AS_instrInList(AS_instr i, AS_instrList il)
+{
+    if (!il) {
+        return 0;
+    }
+    while (il) {
+        if (i == il->head) {
+            return TRUE;
+        }
+        il = il->tail;
+    }
+    return FALSE;
 }

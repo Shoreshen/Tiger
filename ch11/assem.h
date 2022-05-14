@@ -44,8 +44,13 @@ AS_targets AS_Targets(Temp_labelList labels);
 AS_instr AS_Oper(char *a, Temp_tempList d, Temp_tempList s, AS_targets j);
 AS_instr AS_Label(char *a, Temp_label label);
 AS_instr AS_Move(char *a, Temp_tempList d, Temp_tempList s);
-void AS_print(FILE *out, AS_instr i, E_stack m);
+void AS_print(FILE *out, AS_instr i, E_map m);
 AS_instrList AS_InstrList(AS_instr head, AS_instrList tail);
 AS_instrList AS_splice(AS_instrList a, AS_instrList b);
-void AS_printInstrList(FILE *out, AS_instrList iList, E_stack m);
+void AS_printInstrList(FILE *out, AS_instrList iList, E_map m);
 AS_proc AS_Proc(char *p, AS_instrList b, char *e);
+
+AS_instrList AS_instrUnion(AS_instrList ta, AS_instrList tb);
+AS_instrList AS_instrMinus(AS_instrList ta, AS_instrList tb);
+AS_instrList AS_instrIntersect(AS_instrList ta, AS_instrList tb);
+int AS_instrInList(AS_instr i, AS_instrList il);

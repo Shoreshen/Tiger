@@ -26,22 +26,22 @@ char *S_name(S_symbol sym)
     return sym->id;
 }
 
-void S_enter(E_stack stack, S_symbol key, void* value) 
+void S_enter(E_map stack, S_symbol key, void* value) 
 {
     TAB_enter(&stack->table, key, value);
 }
 
-void* S_look(E_stack stack, S_symbol key) 
+void* S_look(E_map stack, S_symbol key) 
 {
     return E_look(stack, key);
 }
 
-void S_beginScope(E_stack *stack) 
+void S_beginScope(E_map *stack) 
 {
-    E_stack_push(stack);
+    E_map_push(stack);
 }
 
-void S_endScope(E_stack *stack, void (*free_entry)(void* value)) 
+void S_endScope(E_map *stack, void (*free_entry)(void* value)) 
 {
-    E_stack_pop(stack, free_entry);
+    E_map_pop(stack, free_entry);
 }

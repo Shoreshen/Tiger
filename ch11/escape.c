@@ -10,9 +10,9 @@ struct escapeEntry_ {
     int* escape;
 };
 
-void traverseExp(E_stack env, int depth, A_exp e);
-void traverseDec(E_stack env, int depth, A_decList d);
-void traverseVar(E_stack env, int depth, A_var v);
+void traverseExp(E_map env, int depth, A_exp e);
+void traverseDec(E_map env, int depth, A_decList d);
+void traverseVar(E_map env, int depth, A_var v);
 
 escapeEntry EscapeEntry(int depth, int* escape) {
     escapeEntry e = checked_malloc(sizeof(*e));
@@ -23,11 +23,11 @@ escapeEntry EscapeEntry(int depth, int* escape) {
 
 void Esc_findEscape(A_exp exp)
 {
-    E_stack env = E_empty_env();
+    E_map env = E_empty_env();
     traverseExp(env, 0, exp);
 }
 
-void traverseExp(E_stack env, int depth, A_exp e)
+void traverseExp(E_map env, int depth, A_exp e)
 {
     switch (e->kind) {
         case A_varExp: {
@@ -108,7 +108,7 @@ void traverseExp(E_stack env, int depth, A_exp e)
     return;
 }
 
-void traverseDec(E_stack env, int depth, A_decList d)
+void traverseDec(E_map env, int depth, A_decList d)
 {
     while (d) {
         switch (d->head->kind) {
@@ -138,7 +138,7 @@ void traverseDec(E_stack env, int depth, A_decList d)
         d = d->tail;
     }
 }
-void traverseVar(E_stack env, int depth, A_var v)
+void traverseVar(E_map env, int depth, A_var v)
 {
     switch (v->kind) {
         case A_simpleVar: {

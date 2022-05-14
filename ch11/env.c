@@ -5,38 +5,38 @@
 #include "translate.h"
 #include "temp.h"
 
-void E_stack_push(E_stack* stack) {
-    E_stack tmp = (E_stack) checked_malloc(sizeof(struct E_stack_));
+void E_map_push(E_map* stack) {
+    E_map tmp = (E_map) checked_malloc(sizeof(struct E_map_));
     tmp->table = NULL;
     tmp->next = *stack;
     *stack = tmp;
 }
-void E_stack_pop(E_stack* stack, void (*free_entry)(void* value)) {
-    E_stack tmp = *stack;
+void E_map_pop(E_map* stack, void (*free_entry)(void* value)) {
+    E_map tmp = *stack;
     if (stack != NULL) {
         *stack = (*stack)->next;
         TAB_free(&tmp->table, free_entry);
         free(tmp);
     }
 }
-E_stack E_empty_env(void)
+E_map E_empty_env(void)
 {
-    E_stack s = checked_malloc(sizeof(struct E_stack_));
+    E_map s = checked_malloc(sizeof(struct E_map_));
     s->table = NULL;
     s->next = NULL;
     return s;
 }
-E_stack E_base_tenv(void)
+E_map E_base_tenv(void)
 {
-    E_stack tenv = E_empty_env();
+    E_map tenv = E_empty_env();
     TAB_enter(&tenv->table, S_Symbol("int"), Ty_Int());
     TAB_enter(&tenv->table, S_Symbol("string"), Ty_String());
     TAB_enter(&tenv->table, S_Symbol("nil"), Ty_Nil());
     return tenv;
 }
-E_stack E_base_venv(void) 
+E_map E_base_venv(void) 
 {
-    E_stack venv = E_empty_env();
+    E_map venv = E_empty_env();
     TAB_enter(&venv->table, S_Symbol("print"), 
         E_FunEntry(
             Tr_outermost(), 
@@ -139,7 +139,7 @@ E_enventry E_FunEntry(Tr_level level, Temp_label label, Ty_tyList formals, Ty_ty
     e->u.fun.result = result;
     return e;
 }
-void* E_look(E_stack stack, void* key)
+void* E_look(E_map stack, void* key)
 {
     TAB_table tab = NULL;
     while (stack != NULL) {
@@ -151,7 +151,14 @@ void* E_look(E_stack stack, void* key)
     }
     return NULL;
 }
-void E_enter(E_stack stack, void* key, void* value)
+void E_enter(E_map stack, void* key, void* value)
 {
     TAB_enter(&stack->table, key, value);
+}
+void E_clear(E_map stack)
+{
+    while (stack != NULL) {
+        TAB_clear(&stack->table);
+        stack = stack->next;
+    }
 }

@@ -53,7 +53,7 @@ extern char* yyfilename;
 
 #pragma region Global typedefs
 // env.h
-typedef struct E_stack_* E_stack;
+typedef struct E_map_* E_map;
 // symbol.h
 typedef struct S_symbol_ *S_symbol;
 // table.h
@@ -75,7 +75,6 @@ typedef struct Temp_temp_ *Temp_temp;
 typedef struct S_symbol_ *Temp_label;
 typedef struct Temp_labelList_* Temp_labelList;
 typedef struct Temp_tempList_ *Temp_tempList;
-typedef E_stack Temp_map;
 // translate.c
 typedef struct Tr_access_ *Tr_access;
 typedef struct Tr_level_ *Tr_level;
@@ -88,11 +87,11 @@ typedef struct T_stmList_ *T_stmList;
 // frame.h
 typedef struct F_fragList_ *F_fragList;
 typedef struct F_accessList_ *F_accessList;
+typedef struct F_frame_ *F_frame;
 // graph.h
 typedef struct G_graph_ *G_graph;  /* The "graph" type */
 typedef struct G_node_ *G_node;    /* The "node" type */
 typedef struct G_nodeList_ *G_nodeList;
-typedef E_stack G_table;
 // assem.h
 typedef struct AS_instrList_ *AS_instrList;
 #pragma endregion

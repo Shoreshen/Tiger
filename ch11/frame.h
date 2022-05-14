@@ -3,7 +3,6 @@
 #include "util.h"
 
 typedef struct F_access_ *F_access;
-typedef struct F_frame_ *F_frame;
 typedef struct F_frag_ *F_frag;
 
 struct F_frame_ {

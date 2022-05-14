@@ -44,6 +44,11 @@ void TAB_free(TAB_table* table, void (*free_entry)(void* value))
     }
     return;
 }
+// Clear the table without freeing each entry with more efficient way
+void TAB_clear(TAB_table* table)
+{
+    HASH_CLEAR(hh, *table);
+}
 void TAB_dump(TAB_table* table, void (*show)(void* value))
 {
     TAB_table t = NULL;

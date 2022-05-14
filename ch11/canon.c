@@ -307,7 +307,7 @@ struct C_block C_basicBlocks(T_stmList stmList)
     return b;
 }
 
-E_stack block_env;
+E_map block_env;
 struct C_block global_block;
 
 T_stmList getLast(T_stmList list)

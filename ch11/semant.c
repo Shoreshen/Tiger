@@ -13,10 +13,10 @@ struct expty_ {
     Ty_ty ty;
 };
 
-expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e);
-expty transVar(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_var v);
-Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decList d);
-Ty_ty transTy (E_stack tenv, A_ty t);
+expty transExp(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_exp e);
+expty transVar(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_var v);
+Tr_exp transDec(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_decList d);
+Ty_ty transTy (E_map tenv, A_ty t);
 
 int inloop = 0;
 
@@ -47,7 +47,7 @@ int actual_eq(Ty_ty source, Ty_ty target)
            (t1->kind != Ty_record && t1->kind != Ty_array && t1->kind == t2->kind);
 }
 
-expty transVar(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_var v)
+expty transVar(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_var v)
 {
     switch (v->kind) {
         case A_simpleVar: {
@@ -97,7 +97,7 @@ expty transVar(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_var v)
     assert(0);
 }
 
-expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
+expty transExp(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_exp e)
 {
     switch (e->kind) {
         case A_varExp: {
@@ -367,7 +367,7 @@ expty transExp(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_exp e)
     }
 }
 
-Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decList d) 
+Tr_exp transDec(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_decList d) 
 {
     A_dec dec;
     A_decList decs = d;
@@ -537,7 +537,7 @@ Tr_exp transDec(Tr_level level, E_stack venv, E_stack tenv, Tr_exp done, A_decLi
     return var_inits;
 }
 
-Ty_ty transTy (E_stack tenv, A_ty t)
+Ty_ty transTy (E_map tenv, A_ty t)
 {
     switch (t->kind) {
         case A_nameTy: {
@@ -584,9 +584,9 @@ Ty_ty transTy (E_stack tenv, A_ty t)
 F_fragList SEM_transProg(A_exp exp)
 {
     // Apply base environment for type
-    E_stack tenv = E_base_tenv();
+    E_map tenv = E_base_tenv();
     // Apply base environment for value & function
-    E_stack venv = E_base_venv();
+    E_map venv = E_base_venv();
     // Apply sematic analyze
     expty trans_exp = transExp(Tr_outermost(), venv, tenv, NULL, exp);
     // Adding to fraglist

@@ -72,28 +72,28 @@ Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t)
     return p;
 }
 
-void Temp_layerMap(Temp_map* stack)
+void Temp_layerMap(E_map* stack)
 {
-    E_stack_push(stack);
+    E_map_push(stack);
 }
 
-Temp_map Temp_empty(void)
+E_map Temp_empty(void)
 {
-    return (Temp_map)E_empty_env();
+    return (E_map)E_empty_env();
 }
 
-void Temp_enter(Temp_map m, Temp_temp t, void* s)
+void Temp_enter(E_map m, Temp_temp t, void* s)
 {
     TAB_enter(&m->table, t, s);
 }
 
-void* Temp_look(Temp_map m, Temp_temp t)
+void* Temp_look(E_map m, Temp_temp t)
 {
     return E_look(m, t);
 }
 
-static Temp_map m = NULL;
-Temp_map Temp_name()
+static E_map m = NULL;
+E_map Temp_name()
 {
     if (!m) {
         m = Temp_empty();
@@ -110,22 +110,22 @@ Temp_tempList Temp_union(Temp_tempList a, Temp_tempList b)
         return a;
     }
 
-    Temp_map tmp = E_empty_env();
-    Temp_tempList tl;
+    E_map tmp_map = E_empty_env();
+    Temp_tempList tl = NULL;
     
     while (a) {
-        Temp_enter(tmp, a->head, "valid");
+        Temp_enter(tmp_map, a->head, "valid");
         tl = Temp_TempList(a->head, tl);
         a = a->tail;
     }
     
     while (b) {
-        if (!Temp_look(tmp, b->head)) {
+        if (!Temp_look(tmp_map, b->head)) {
             tl = Temp_TempList(b->head, tl);
         }
         b = b->tail;
     }
-
+    E_clear(tmp_map);
     return tl;
 }
 
@@ -135,45 +135,47 @@ Temp_tempList Temp_intersect(Temp_tempList a, Temp_tempList b)
         return NULL;
     }
 
-    Temp_map tmp = Temp_empty();
-    Temp_tempList tl;
+    E_map tmp_map = E_empty_env();
+    Temp_tempList tl = NULL;
     
     while (a) {
-        Temp_enter(tmp, a->head, "valid");
+        Temp_enter(tmp_map, a->head, "valid");
         a = a->tail;
     }
     
     while (b) {
-        if (Temp_look(tmp, b->head)) {
+        if (Temp_look(tmp_map, b->head)) {
             tl = Temp_TempList(b->head, tl);
         }
         b = b->tail;
     }
-
+    E_clear(tmp_map);
     return tl;
 }
 
 Temp_tempList Temp_minus(Temp_tempList a, Temp_tempList b)
 {
-    if (!b) {
+    if (!a || !b) {
+        // a is NULL, return null
+        // b is NULL, return a
         return a;
     }
 
-    Temp_map tmp = E_empty_env();
-    Temp_tempList tl;
+    E_map tmp_map = E_empty_env();
+    Temp_tempList tl = NULL;
     
     while (b) {
-        Temp_enter(tmp, b->head, "valid");
+        Temp_enter(tmp_map, b->head, "valid");
         b = b->tail;
     }
     
     while (a) {
-        if (!Temp_look(tmp, a->head)) {
+        if (!Temp_look(tmp_map, a->head)) {
             tl = Temp_TempList(a->head, tl);
         }
         a = a->tail;
     }
-
+    E_clear(tmp_map);
     return tl;
 }
 
@@ -186,22 +188,22 @@ int Temp_equal(Temp_tempList a, Temp_tempList b)
         return FALSE;
     }
     int count_a = 0, count_b = 0;
-    Temp_map tmp = E_empty_env();
+    E_map tmp_map = E_empty_env();
     Temp_tempList tl;
     
     while (a) {
-        Temp_enter(tmp, a->head, "valid");
+        Temp_enter(tmp_map, a->head, "valid");
         count_a++;
         a = a->tail;
     }
     
     while (b) {
-        if (!Temp_look(tmp, b->head)) {
+        if (!Temp_look(tmp_map, b->head)) {
             return FALSE;
         }
         count_b++;
         b = b->tail;
     }
-
+    E_clear(tmp_map);
     return (count_a == count_b);
 }

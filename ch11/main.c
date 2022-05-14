@@ -18,10 +18,10 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
     AS_instrList iList;
     // Printing
     fprintf(out, "====================================================================\n");
-    // fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
-    // fprintf(out, "**********************************\n");
-    // pr_stm(out, body, 0);
-    // fprintf(out, "\n");
+    fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
+    fprintf(out, "**********************************\n");
+    pr_stm(out, body, 0);
+    fprintf(out, "\n");
     stm_l = C_linearize(body);
     stm_l = C_traceSchedule(C_basicBlocks(stm_l));
     fprintf(out, "**********************************\n");

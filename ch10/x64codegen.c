@@ -448,7 +448,7 @@ Temp_temp munchExp(T_exp e)
             Temp_temp r = Temp_newtemp();
             Temp_temp tmp_rax= Temp_newtemp();
             emit(AS_Move(
-                get_heap_str("mov `d0, `s0"),
+                get_heap_str("mov `d0, `s0\n"),
                 Temp_TempLists(tmp_rax, NULL),
                 Temp_TempLists(F_RV(), NULL)
             ));
@@ -463,12 +463,12 @@ Temp_temp munchExp(T_exp e)
             // if left until "use", instructions along the way will all create conflict
             // thus, use a fresh temp which can be spilled to replace rax
             emit(AS_Move(
-                get_heap_str("mov `d0, `s0"),
+                get_heap_str("mov `d0, `s0\n"),
                 Temp_TempLists(r, NULL),
                 Temp_TempLists(F_RV(), NULL)
             ));
             emit(AS_Move(
-                get_heap_str("mov `d0, `s0"),
+                get_heap_str("mov `d0, `s0\n"),
                 Temp_TempLists(F_RV(), NULL),
                 Temp_TempLists(tmp_rax, NULL)
             ));

@@ -650,7 +650,8 @@ Tr_exp Tr_seqence(Tr_exp left, Tr_exp right)
 }
 void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals)
 {
-    F_frag pfrag = F_ProcFrag(unNx(body), level->frame);
+    T_stm stm = T_Move(T_Temp(F_RV()), unEx(body));
+    F_frag pfrag = F_ProcFrag(stm, level->frame);
 	fragList = F_FragList(pfrag, fragList);
 }
 #pragma endregion

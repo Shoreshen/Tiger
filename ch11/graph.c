@@ -180,17 +180,17 @@ void *G_nodeInfo(G_node n)
 }
 
 /* G_node table functions */
-G_table G_empty(void)
+E_map G_empty(void)
 {
     return E_empty_env();
 }
 
-void G_enter(G_table t, G_node node, void *value)
+void G_enter(E_map t, G_node node, void *value)
 {
     E_enter(t, node, value);
 }
 
-void *G_look(G_table t, G_node node)
+void *G_look(E_map t, G_node node)
 {
     return E_look(t, node);
 }

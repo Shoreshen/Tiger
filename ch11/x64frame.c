@@ -225,7 +225,7 @@ F_access F_GetAccess(int *regCount, int *memCount, int escape)
             ...
             rbp -  8: first local variable
             rbp     : return addrss
-            rbp +  8: static link
+            rbp +  8: static link (last rbp)
             rbp + 16: first non-escape arg
             ...
         */

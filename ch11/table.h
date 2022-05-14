@@ -12,3 +12,4 @@ void TAB_delete(TAB_table* table, void* key);
 TAB_table TAB_look(TAB_table* table, void* key);
 void TAB_free(TAB_table* table, void (*free_entry)(void* value));
 void TAB_dump(TAB_table* table, void (*show)(void* value));
+void TAB_clear(TAB_table* table);

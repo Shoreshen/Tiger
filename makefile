@@ -133,7 +133,8 @@ clean:
 	    ./ch7/*.yy.c ./ch7/*.tab.* \
 	    ./ch8/*.yy.c ./ch8/*.tab.* \
 		./ch9/*.yy.c ./ch9/*.tab.* \
-		./ch10/*.yy.c ./ch10/*.tab.*
+		./ch10/*.yy.c ./ch10/*.tab.* \
+		./ch11/*.yy.c ./ch11/*.tab.*
 PHONY += clean
 # Assem =========================================================================================
 ./nasm/test.com:./nasm/test.asm

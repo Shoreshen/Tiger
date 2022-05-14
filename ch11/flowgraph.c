@@ -42,7 +42,7 @@ G_graph FG_AssemFlowGraph(AS_instrList il)
     G_node n = NULL;
     G_node n_last = NULL;
     G_nodeList jmp_list = NULL;
-    E_stack L_map = E_empty_env();
+    E_map L_map = E_empty_env();
     AS_instr i = NULL;
     AS_instr i_last = NULL;
 
