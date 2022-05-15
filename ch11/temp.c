@@ -3,7 +3,7 @@
 #include "env.h"
 #include "table.h"
 
-static int temps = 0;
+static int temps = 20;
 static int labels = 0;
 
 Temp_temp Temp_newtemp()

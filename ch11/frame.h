@@ -12,6 +12,7 @@ struct F_frame_ {
     int inFrame_count;
     int inReg_count;
     int local_count;
+    int local_frame_count;
 };
 struct F_accessList_ {
     F_access head;
@@ -71,3 +72,4 @@ AS_proc F_procEntryExit(F_frame frame, AS_instrList body);
 void F_printFrags(FILE* out, F_fragList frags);
 
 extern const int F_WORD_SIZE;
+extern const int F_KEEP;

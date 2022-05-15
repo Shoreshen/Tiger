@@ -98,21 +98,4 @@ typedef struct AS_proc_ *AS_proc;
 typedef struct F_fragList_ *F_fragList;
 typedef struct F_accessList_ *F_accessList;
 typedef struct F_frame_ *F_frame;
-// RBP, RSP not participate in coloring
-enum {
-  RAX = 0,
-  RDX = 1,
-  RCX = 2,
-  RBX = 3,
-  RSI = 4,
-  RDI = 5,
-  R8  = 6,
-  R9  = 7,
-  R10 = 8,
-  R11 = 9,
-  R12 = 10,
-  R13 = 11,
-  R14 = 12,
-  R15 = 13
-};
 #pragma endregion

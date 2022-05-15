@@ -1,0 +1,17 @@
+let 
+	var a:int := 1
+	var g:int := 2
+	function inc(f:int) : int = 
+		f + a
+	function add (b:int, c:int, f:int) : int =
+		let 
+			var e := 7
+		in 
+			(inc(b) * c + a) / f
+		end
+in
+	/* BODY OF MAIN PROGRAM */
+	add(3, 5, 7)
+end
+   
+   

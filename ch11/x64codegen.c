@@ -8,8 +8,10 @@
 #define FLAG_INDEX_SET 1 << 1
 #define FLAG_BASE_SET 1 << 2
 #define FLAG_ALL (FLAG_BASE_SET & FLAG_INDEX_SET & FLAG_OFFSET_SET)
+#define F_KEEP 6 // keep 6 formal param in registers
 
 static AS_instrList iList = NULL, last = NULL;
+Temp_temp func_formals[F_KEEP] = {NULL};
 Temp_temp munchExp(T_exp e);
 void munchStm(T_stm s);
 struct EffAddr {
@@ -423,7 +425,11 @@ Temp_temp munchExp(T_exp e)
             return r;
         }
         case T_TEMP:
-            return e->u.TEMP;
+            if (e->u.TEMP->num < F_KEEP) {
+                return func_formals[e->u.TEMP->num];
+            } else {
+                return e->u.TEMP;
+            }
         case T_NAME: {
             Temp_temp r = Temp_newtemp();
             emit(AS_Oper(
@@ -575,6 +581,21 @@ AS_instrList F_codegen(F_frame f, T_stmList stmList)
 {
     T_stmList sl = stmList;
     AS_instrList as_list;
+    F_accessList formals = f->formals;
+    while (formals) {
+        if (formals->head->kind == F_inReg) {
+            int i = formals->head->u.reg->num;
+            if (!func_formals[i]) {
+                func_formals[i] = Temp_newtemp();
+            }
+            emit(AS_Move(
+                get_heap_str("mov `d0, `s0\n"),
+                Temp_TempLists(func_formals[i], NULL),
+                Temp_TempLists(formals->head->u.reg,NULL)
+            ));
+        }
+        formals = formals->tail;
+    }
     while (sl) {
         munchStm(sl->head);
         sl = sl->tail;

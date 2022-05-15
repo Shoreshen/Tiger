@@ -6,6 +6,50 @@
 
 #define F_KEEP 6 // keep 6 formal param in registers
 const int F_WORD_SIZE = 8; // x64 architecture
+// RBP, RSP not participate in coloring
+enum REG {
+    x64_RDI = 0,
+    x64_RSI = 1,
+    x64_RDX = 2,
+    x64_RCX = 3,
+    x64_R8  = 4,
+    x64_R9  = 5, //First 6 registers are used for passing parameters
+    x64_RAX = 6,
+    x64_RBX = 7,
+    x64_R10 = 8,
+    x64_R11 = 9,
+    x64_R12 = 10,
+    x64_R13 = 11,
+    x64_R14 = 12,
+    x64_R15 = 13,
+    x64_RBP = 14,
+    x64_RSP = 15
+};
+char* x64_reg_names[16] = {
+    "rdi",
+    "rsi",
+    "rdx",
+    "rcx",
+    "r8",
+    "r9",
+    "rax",
+    "rbx",
+    "r10",
+    "r11",
+    "r12",
+    "r13",
+    "r14",
+    "r15",
+    "rbp",
+    "rsp"
+};
+Temp_temp Temp_m_reg(enum REG reg)
+{
+    Temp_temp p = checked_malloc(sizeof(*p));
+    p->num = (int) reg;
+    Temp_enter(Temp_name(), p, get_heap_str("%s", x64_reg_names[reg]));
+    return p;
+}
 
 T_exp F_Exp(F_access acc, T_exp framePtr) {
     if (acc->kind == F_inFrame) {
@@ -20,7 +64,7 @@ Temp_temp F_DX() {
     // x86-64 architecture use rsp as stack pointer
     // it is a constant register, thus return a const Temp_temp
     if(!dx) {
-        dx = Temp_tempstring("rdx");
+        dx = Temp_m_reg(x64_RDX);
     }
     return dx;
 }
@@ -30,7 +74,7 @@ Temp_temp F_FP() {
     // x86-64 architecture use rbp as frame pointer
     // it is a constant register, thus return a const Temp_temp
     if(!fp) {
-        fp = Temp_tempstring("rbp");
+        fp = Temp_m_reg(x64_RBP);
     }
     return fp;
 }
@@ -40,7 +84,7 @@ Temp_temp F_SP() {
     // x86-64 architecture use rsp as stack pointer
     // it is a constant register, thus return a const Temp_temp
     if(!sp) {
-        sp = Temp_tempstring("rsp");
+        sp = Temp_m_reg(x64_RSP);
     }
     return sp;
 }
@@ -50,7 +94,7 @@ Temp_temp F_RV() {
     // x86-64 architecture use rax to store return value from function
     // it is a constant register, thus return a const Temp_temp
     if(!rv) {
-        rv = Temp_tempstring("rax");
+        rv = Temp_m_reg(x64_RAX);
     }
     return rv;
 }
@@ -58,7 +102,7 @@ Temp_temp F_AX() {
     // x86-64 architecture use rsp as stack pointer
     // it is a constant register, thus return a const Temp_temp
     if(!rv) {
-        rv = Temp_tempstring("rax");
+        rv = Temp_m_reg(x64_RAX);
     }
     return rv;
 }
@@ -69,30 +113,30 @@ Temp_temp F_Keep_Regs(int i)
     // x86-64 architecture use rdi, rsi, rdx, rcx, r8, r9 to pass first 6 formal parameters
     // Thus returning constant reguster number
     if (!f_regs[i]) {
-        char* reg = NULL;
+        enum REG reg = -1;
         switch (i) {
             case 0:
-                reg = "rdi";
+                reg = x64_RDI;
                 break;
             case 1:
-                reg = "rsi";
+                reg = x64_RSI;
                 break;
             case 2:
-                reg = "rdx";
+                reg = x64_RDX;
                 break;
             case 3:
-                reg = "rci";
+                reg = x64_RCX;
                 break;
             case 4:
-                reg = "r8";
+                reg = x64_R8;
                 break;
             case 5:
-                reg = "r9";
+                reg = x64_R9;
                 break;
             default:
                 assert(0);
         }
-        f_regs[i] = Temp_tempstring(reg);
+        f_regs[i] = Temp_m_reg(reg);
     }
     return f_regs[i];
 }
@@ -124,41 +168,37 @@ T_exp F_externalCall(char *s, T_expList args, F_accessList accs) {
     // cdcel need to 
     return T_Call(T_Name(Temp_namedlabel(s)), args, accs, NULL);
 }
-AS_proc F_procEntryExit(F_frame frame, AS_instrList body) {
+AS_proc F_procEntryExit(F_frame frame, AS_instrList body) 
+{
     char buf[100];
     AS_instrList procEntry = NULL, procExit = NULL;
+
     sprintf(buf, "# PROCEDURE %s\n", S_name(frame->name));
+    procEntry = AS_InstrLists(
+        AS_Oper("push `s0\n", NULL, Temp_TempLists(F_FP(), NULL), NULL),
+        AS_Move("mov `d0, `s0\n", Temp_TempLists(F_FP(), NULL), Temp_TempLists(F_SP(), NULL)),
+        NULL
+    );
     if (frame->local_count) {
-        procEntry = AS_InstrLists(
-            AS_Move("mov `s0, `d0\n", Temp_TempLists(F_FP(), NULL), Temp_TempLists(F_SP(), NULL)),
-            AS_Oper(
-                get_heap_str("sub `s0, %d", frame->local_count * F_WORD_SIZE),
-                Temp_TempList(F_SP(), NULL),
-                Temp_TempList(F_SP(), NULL),
+        procEntry = AS_splice(
+            procEntry,
+            AS_InstrLists(
+                AS_Oper(
+                    get_heap_str("sub `s0, %d\n", frame->local_count * F_WORD_SIZE),
+                    Temp_TempList(F_SP(), NULL),
+                    Temp_TempList(F_SP(), NULL),
+                    NULL
+                ),
                 NULL
-            ),
-            NULL
-        );
-        procExit = AS_InstrLists(
-            AS_Oper("ret\n", NULL, NULL, NULL),
-            AS_Oper(
-                get_heap_str("add `s0, %d", frame->local_count * F_WORD_SIZE),
-                Temp_TempList(F_SP(), NULL),
-                Temp_TempList(F_SP(), NULL),
-                NULL
-            ),
-            NULL
-        );
-    } else {
-        procEntry = AS_InstrLists(
-            AS_Move("mov `s0, `d0\n", Temp_TempLists(F_FP(), NULL), Temp_TempLists(F_SP(), NULL)),
-            NULL
-        );
-        procExit = AS_InstrLists(
-            AS_Oper("ret\n", NULL, NULL, NULL),
-            NULL
+            )
         );
     }
+    procExit = AS_InstrLists(
+        AS_Move("mov `d0, `s0\n", Temp_TempLists(F_SP(), NULL), Temp_TempLists(F_FP(), NULL)),
+        AS_Oper("pop `s0\n", NULL, Temp_TempLists(F_FP(), NULL), NULL),
+        AS_Oper("ret\n", NULL, NULL, NULL),
+        NULL
+    );
     body = AS_splice(
         AS_splice(
             procEntry,
@@ -216,19 +256,6 @@ F_access F_GetAccess(int *regCount, int *memCount, int escape)
         (*regCount)++;
         return F_InReg(F_Keep_Regs(*regCount - 1));
     } else {
-        /* 
-            In x64:
-            1. push formals (including rbp)
-            2. call
-            3. rsp->rbp
-            while rbp is the frame pointer:
-            ...
-            rbp -  8: first local variable
-            rbp     : return addrss
-            rbp +  8: static link (last rbp)
-            rbp + 16: first non-escape arg
-            ...
-        */
         (*memCount)++;
         return F_InFrame(((*memCount) - 1) * F_WORD_SIZE);
     }
@@ -241,8 +268,24 @@ F_frame F_newFrame(Temp_label name, U_boolList formals)
     f->locals = NULL;
     f->local_count = 0;
     f->inReg_count = 0;
-    f->inFrame_count = 1; // First resarve for return address
-
+    f->local_frame_count = 1;
+    f->inFrame_count = 2; 
+    // `rbp + 0` and `rbp + 8`
+    /* 
+        In x64:
+        1. push formals (including rbp)
+        2. call
+        3. push rbp
+        4. rsp->rbp
+        while rbp is the frame pointer:
+        ...
+        rbp -  8: first local variable
+        rbp     : caller rbp
+        rbp +  8: return addrss
+        rbp + 16: static link (parent frame pointer, may or may not be caller's rbp)
+        rbp + 24: first non-escape arg
+        ...
+    */
     while (formals) {
         f->formals = F_AccessList(
             F_GetAccess(&(f->inReg_count), &(f->inFrame_count), formals->head), 
@@ -258,8 +301,9 @@ F_access F_allocLocal(F_frame f, int escape)
 {
     F_access a = NULL;
     if (escape) {
-        a = F_InFrame(-(f->inFrame_count) * F_WORD_SIZE);
+        a = F_InFrame(-(f->local_frame_count) * F_WORD_SIZE);
         f->inFrame_count++;
+        f->local_frame_count++;
     } else {
         a = F_InReg(Temp_newtemp());
         f->inReg_count++;
