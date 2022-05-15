@@ -157,8 +157,9 @@ void E_enter(E_map stack, void* key, void* value)
 }
 void E_clear(E_map stack)
 {
-    while (stack != NULL) {
-        TAB_clear(&stack->table);
-        stack = stack->next;
+    if (stack->next) {
+        E_clear(stack->next);
     }
+    TAB_clear(&stack->table);
+    free(stack);
 }

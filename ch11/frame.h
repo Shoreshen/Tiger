@@ -11,6 +11,7 @@ struct F_frame_ {
     F_accessList locals;
     int inFrame_count;
     int inReg_count;
+    int local_count;
 };
 struct F_accessList_ {
     F_access head;
@@ -65,10 +66,8 @@ F_access F_InReg(Temp_temp reg);
 F_frag F_StringFrag(Temp_label label, char* str);
 F_frag F_ProcFrag(T_stm body, F_frame frame);
 F_access F_GetAccess(int *regCount, int *memCount, int escape);
-Temp_tempList F_calleesaves();
-Temp_tempList F_callersaves();
 T_exp F_externalCall(char *s, T_expList args, F_accessList accs);
-T_stm F_procEntryExit1(F_frame frame, T_stm stm);
+AS_proc F_procEntryExit(F_frame frame, AS_instrList body);
 void F_printFrags(FILE* out, F_fragList frags);
 
 extern const int F_WORD_SIZE;

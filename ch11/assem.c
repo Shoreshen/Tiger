@@ -55,7 +55,23 @@ AS_instrList AS_InstrList(AS_instr head, AS_instrList tail)
     p->tail = tail;
     return p;
 }
+AS_instrList AS_InstrLists(AS_instr instrs, ...)
+{
+    va_list i;
+    AS_instr arg;
+    AS_instrList head, tail;
+    va_start(i, instrs);
 
+    head = AS_InstrList(instrs, NULL);
+    tail = head;
+    while (arg = va_arg(i, AS_instr)) {
+        tail->tail = AS_InstrList(arg, NULL);
+        tail = tail->tail;
+    }
+
+    va_end(i);
+    return head;
+}
 /* put list b at the end of list a */
 AS_instrList AS_splice(AS_instrList a, AS_instrList b)
 {

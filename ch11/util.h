@@ -84,14 +84,35 @@ typedef struct T_stm_ *T_stm;
 typedef struct T_exp_ *T_exp;
 typedef struct T_expList_ *T_expList;
 typedef struct T_stmList_ *T_stmList;
-// frame.h
-typedef struct F_fragList_ *F_fragList;
-typedef struct F_accessList_ *F_accessList;
-typedef struct F_frame_ *F_frame;
 // graph.h
 typedef struct G_graph_ *G_graph;  /* The "graph" type */
 typedef struct G_node_ *G_node;    /* The "node" type */
 typedef struct G_nodeList_ *G_nodeList;
 // assem.h
 typedef struct AS_instrList_ *AS_instrList;
+typedef struct AS_proc_ *AS_proc;
+#pragma endregion
+
+#pragma region x64 frame
+// frame.h
+typedef struct F_fragList_ *F_fragList;
+typedef struct F_accessList_ *F_accessList;
+typedef struct F_frame_ *F_frame;
+// RBP, RSP not participate in coloring
+enum {
+  RAX = 0,
+  RDX = 1,
+  RCX = 2,
+  RBX = 3,
+  RSI = 4,
+  RDI = 5,
+  R8  = 6,
+  R9  = 7,
+  R10 = 8,
+  R11 = 9,
+  R12 = 10,
+  R13 = 11,
+  R14 = 12,
+  R15 = 13
+};
 #pragma endregion

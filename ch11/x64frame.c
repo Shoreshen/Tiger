@@ -124,49 +124,49 @@ T_exp F_externalCall(char *s, T_expList args, F_accessList accs) {
     // cdcel need to 
     return T_Call(T_Name(Temp_namedlabel(s)), args, accs, NULL);
 }
-T_stm F_procEntryExit1(F_frame frame, T_stm stm)
-{
-    return stm;
-}
-static Temp_tempList calleeSaves;
-Temp_tempList F_calleesaves()
-{
-    return NULL;
-}
-static Temp_tempList callerSaves;
-Temp_tempList F_callersaves()
-{
-    if (callerSaves == NULL) {
-        calleeSaves = Temp_TempLists(F_RV(), NULL);
-    }
-    return calleeSaves;
-}
-static Temp_tempList returnSink = NULL;
-AS_instrList F_procEntryExit2(AS_instrList body) {
-    Temp_tempList calleeSaves = NULL;
-    if (!returnSink) {
-        // sink: list of registers that alive after function call
-        returnSink = Temp_TempList(
-            F_RV(),
-            Temp_TempList(
-                F_SP(), 
-                F_calleesaves()
-            )
+AS_proc F_procEntryExit(F_frame frame, AS_instrList body) {
+    char buf[100];
+    AS_instrList procEntry = NULL, procExit = NULL;
+    sprintf(buf, "# PROCEDURE %s\n", S_name(frame->name));
+    if (frame->local_count) {
+        procEntry = AS_InstrLists(
+            AS_Move("mov `s0, `d0\n", Temp_TempLists(F_FP(), NULL), Temp_TempLists(F_SP(), NULL)),
+            AS_Oper(
+                get_heap_str("sub `s0, %d", frame->local_count * F_WORD_SIZE),
+                Temp_TempList(F_SP(), NULL),
+                Temp_TempList(F_SP(), NULL),
+                NULL
+            ),
+            NULL
+        );
+        procExit = AS_InstrLists(
+            AS_Oper("ret\n", NULL, NULL, NULL),
+            AS_Oper(
+                get_heap_str("add `s0, %d", frame->local_count * F_WORD_SIZE),
+                Temp_TempList(F_SP(), NULL),
+                Temp_TempList(F_SP(), NULL),
+                NULL
+            ),
+            NULL
+        );
+    } else {
+        procEntry = AS_InstrLists(
+            AS_Move("mov `s0, `d0\n", Temp_TempLists(F_FP(), NULL), Temp_TempLists(F_SP(), NULL)),
+            NULL
+        );
+        procExit = AS_InstrLists(
+            AS_Oper("ret\n", NULL, NULL, NULL),
+            NULL
         );
     }
-    return AS_splice(
-        body, 
-        AS_InstrList(
-            AS_Oper("", NULL, returnSink, NULL), 
-            NULL
-        )
+    body = AS_splice(
+        AS_splice(
+            procEntry,
+            body
+        ),
+        procExit
     );
-}
-
-AS_proc F_procEntryExit3(F_frame frame, AS_instrList body) {
-    char buf[100];
-    sprintf(buf, "PROCEDURE %s\n", S_name(frame->name));
-    return AS_Proc(buf, body, "END\n");
+    return AS_Proc(buf, body, "# END\n");
 }
 
 void F_printFrags(FILE* out, F_fragList frags)
@@ -239,6 +239,7 @@ F_frame F_newFrame(Temp_label name, U_boolList formals)
     f->name = name;
     f->formals = NULL;
     f->locals = NULL;
+    f->local_count = 0;
     f->inReg_count = 0;
     f->inFrame_count = 1; // First resarve for return address
 
@@ -263,6 +264,7 @@ F_access F_allocLocal(F_frame f, int escape)
         a = F_InReg(Temp_newtemp());
         f->inReg_count++;
     }
+    f->local_count++;
     return a;
 }
 

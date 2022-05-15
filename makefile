@@ -137,10 +137,14 @@ clean:
 		./ch11/*.yy.c ./ch11/*.tab.*
 PHONY += clean
 # Assem =========================================================================================
-./nasm/test.com:./nasm/test.asm
-	nasm -f elf64 ./nasm/test.asm -o ./nasm/test.com
-test_nasm:./nasm/test.com
-	objdump -D ./nasm/test.com > ./nasm/test.s
+./nasm/test.o:./nasm/test.asm
+	nasm -f elf64 ./nasm/test.asm -o ./nasm/test.o
+./nasm/test.out:./nasm/test.o
+	ld ./nasm/test.o -o ./nasm/test.out
+dump_nasm:./nasm/test.out
+	objdump -D ./nasm/test.out > ./nasm/test.s
+dbg_nasm:./nasm/test.out
+	gdb ./nasm/test.out
 # GitHub ========================================================================================
 sub_pull:
 	git submodule foreach --recursive 'git pull'
