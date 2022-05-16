@@ -45,6 +45,7 @@ G_graph FG_AssemFlowGraph(AS_instrList il)
     E_map L_map = E_empty_env();
     AS_instr i = NULL;
     AS_instr i_last = NULL;
+    AS_instr i_n_last = NULL;
 
     while (il) {
         i = il->head;
@@ -54,7 +55,10 @@ G_graph FG_AssemFlowGraph(AS_instrList il)
                 E_enter(L_map, i_last->u.LABEL.label, n);
             }
             if (n_last) {
-                G_addEdge(n_last, n);
+                i_n_last = (AS_instr)G_nodeInfo(n_last);
+                if (!(i_n_last->kind == I_OPER && i_n_last->u.OPER.jumps != NULL && i_n_last->u.OPER.assem[2] == 'p')) {
+                    G_addEdge(n_last, n);
+                }
             }
             if (i->kind == I_OPER && i->u.OPER.jumps != NULL) {
                 jmp_list = G_NodeList(n, jmp_list);
@@ -70,14 +74,14 @@ G_graph FG_AssemFlowGraph(AS_instrList il)
         Temp_labelList ll = i->u.OPER.jumps->labels;
         while (ll) {
             G_node n_jmp = (G_node) E_look(L_map, ll->head);
-            if (!n_jmp) {
-                assert(0);
+            if (n_jmp) {
+                G_addEdge(n, n_jmp);
             }
-            G_addEdge(n, n_jmp);
             ll = ll->tail;
         }
         jmp_list = jmp_list->tail;
     }
+    E_clear(L_map);
     return g;
 }
 

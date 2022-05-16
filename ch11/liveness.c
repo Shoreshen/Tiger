@@ -71,7 +71,7 @@ void calc_liveMap(G_graph flow, E_map in_map, E_map out_map)
 struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
 {
     G_nodeList nodes = flow->mynodes;
-    G_node node = NULL, n_src = NULL, n_dst = NULL, n_out = NULL;
+    G_node node = NULL, n_dst = NULL, n_out = NULL;
     G_node move_src = NULL, move_dst = NULL;
     Temp_tempList t_src = NULL, t_dst = NULL, t_out = NULL;
     AS_instr move_instr;    
@@ -105,11 +105,9 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
             n_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
             while (t_out) {
                 n_out = findOrCreateNode(t_map, lg.graph, t_out->head);
-                if (
-                    n_src != n_dst && n_out != move_src && 
-                    !G_goesTo(n_src, n_dst) && !G_goesTo(n_dst, n_src) 
-                ) {
-                    G_addEdge(n_src, n_dst);
+                if (n_out != n_dst && n_out != move_src && 
+                    !G_goesTo(n_out, n_dst) && !G_goesTo(n_dst, n_out)) {
+                    G_addEdge(n_out, n_dst);
                 }
                 t_out = t_out->tail;
             }

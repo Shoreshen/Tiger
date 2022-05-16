@@ -11,6 +11,7 @@
 #include "temp.h"
 #include "assem.h"
 #include "codegen.h"
+#include "regalloc.h"
 
 void do_proc(FILE *out, F_frame frame, T_stm body)
 {
@@ -34,8 +35,9 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
     // fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
 
     iList = F_codegen(frame, stm_l);
-    AS_proc iproc = F_procEntryExit(frame, iList);
-    AS_printInstrList(out, iproc->body, Temp_name());
+    // AS_proc iproc = F_procEntryExit(frame, iList);
+    AS_printInstrList(out, iList, Temp_name());
+    RA_regAlloc(frame, iList);
 
     // fprintf(out, "**********************************\n");
     // fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
