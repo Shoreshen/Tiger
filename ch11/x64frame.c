@@ -25,6 +25,7 @@ enum REG {
     x64_RBP = 14,
     x64_RSP = 15
 };
+Temp_temp x64_regs_temp[16] = { NULL };
 char* x64_reg_names[16] = {
     "rdi",
     "rsi",
@@ -43,12 +44,15 @@ char* x64_reg_names[16] = {
     "rbp",
     "rsp"
 };
-Temp_temp Temp_m_reg(enum REG reg)
+Temp_temp get_x64_reg(enum REG reg)
 {
-    Temp_temp p = checked_malloc(sizeof(*p));
-    p->num = (int) reg;
-    Temp_enter(Temp_name(), p, get_heap_str("%s", x64_reg_names[reg]));
-    return p;
+    if (!x64_regs_temp[reg]) {
+        Temp_temp p = checked_malloc(sizeof(*p));
+        p->num = (int) reg;
+        Temp_enter(Temp_name(), p, get_heap_str("%s", x64_reg_names[reg]));
+        x64_regs_temp[reg] = p;
+    }
+    return x64_regs_temp[reg];
 }
 
 T_exp F_Exp(F_access acc, T_exp framePtr) {
@@ -58,87 +62,26 @@ T_exp F_Exp(F_access acc, T_exp framePtr) {
         return T_Temp(acc->u.reg);
     }
 }
-
-static Temp_temp dx = NULL;
 Temp_temp F_DX() {
-    // x86-64 architecture use rsp as stack pointer
-    // it is a constant register, thus return a const Temp_temp
-    if(!dx) {
-        dx = Temp_m_reg(x64_RDX);
-    }
-    return dx;
+    return get_x64_reg(x64_RDX);
 }
-
-static Temp_temp fp = NULL;
 Temp_temp F_FP() {
-    // x86-64 architecture use rbp as frame pointer
-    // it is a constant register, thus return a const Temp_temp
-    if(!fp) {
-        fp = Temp_m_reg(x64_RBP);
-    }
-    return fp;
+    return get_x64_reg(x64_RBP);
 }
-
-static Temp_temp sp = NULL;
 Temp_temp F_SP() {
-    // x86-64 architecture use rsp as stack pointer
-    // it is a constant register, thus return a const Temp_temp
-    if(!sp) {
-        sp = Temp_m_reg(x64_RSP);
-    }
-    return sp;
+    return get_x64_reg(x64_RSP);
 }
-
-static Temp_temp rv = NULL;
 Temp_temp F_RV() {
-    // x86-64 architecture use rax to store return value from function
-    // it is a constant register, thus return a const Temp_temp
-    if(!rv) {
-        rv = Temp_m_reg(x64_RAX);
-    }
-    return rv;
+    return get_x64_reg(x64_RAX);
 }
 Temp_temp F_AX() {
-    // x86-64 architecture use rsp as stack pointer
-    // it is a constant register, thus return a const Temp_temp
-    if(!rv) {
-        rv = Temp_m_reg(x64_RAX);
-    }
-    return rv;
+    return get_x64_reg(x64_RAX);
 }
-
-static Temp_temp f_regs[F_KEEP] = {NULL};
 Temp_temp F_Keep_Regs(int i)
 {
     // x86-64 architecture use rdi, rsi, rdx, rcx, r8, r9 to pass first 6 formal parameters
-    // Thus returning constant reguster number
-    if (!f_regs[i]) {
-        enum REG reg = -1;
-        switch (i) {
-            case 0:
-                reg = x64_RDI;
-                break;
-            case 1:
-                reg = x64_RSI;
-                break;
-            case 2:
-                reg = x64_RDX;
-                break;
-            case 3:
-                reg = x64_RCX;
-                break;
-            case 4:
-                reg = x64_R8;
-                break;
-            case 5:
-                reg = x64_R9;
-                break;
-            default:
-                assert(0);
-        }
-        f_regs[i] = Temp_m_reg(reg);
-    }
-    return f_regs[i];
+    // Thus returning constant register number
+    return get_x64_reg(i);
 }
 
 F_fragList F_FragList(F_frag head, F_fragList tail)
