@@ -7,7 +7,7 @@ let
 		let 
 			var e := 7
 		in 
-			(inc(b) * c + a) / f
+			inc(b) * c + a
 		end
 in
 	/* BODY OF MAIN PROGRAM */

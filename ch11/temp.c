@@ -3,7 +3,7 @@
 #include "env.h"
 #include "table.h"
 
-static int temps = 20;
+static int temps = PRE_COLOR_LIMIT;
 static int labels = 0;
 
 Temp_temp Temp_newtemp()

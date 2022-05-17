@@ -75,6 +75,7 @@ typedef struct Temp_temp_ *Temp_temp;
 typedef struct S_symbol_ *Temp_label;
 typedef struct Temp_labelList_* Temp_labelList;
 typedef struct Temp_tempList_ *Temp_tempList;
+#define PRE_COLOR_LIMIT 100
 // translate.c
 typedef struct Tr_access_ *Tr_access;
 typedef struct Tr_level_ *Tr_level;

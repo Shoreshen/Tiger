@@ -114,7 +114,7 @@ void handle_1(T_exp e1, struct EffAddr* addr)
         addr->assem = get_heap_str("`s0*%d", scale);
         addr->src = Temp_TempLists(index, NULL);
     } else {
-        addr->assem = get_heap_str("`s0");
+        addr->assem = "`s0";
         addr->src = Temp_TempLists(base, NULL);
     }
 }
@@ -176,7 +176,7 @@ Temp_tempList muncArgs(T_expList args, F_accessList accs)
             ));
         } else {
             emit(AS_Move(
-                get_heap_str("mov `d0, `s0\n"), 
+                "mov `d0, `s0\n", 
                 Temp_TempLists(accs->head->u.reg, NULL), 
                 Temp_TempLists(munchExp(args->head), NULL)
             ));
@@ -190,7 +190,7 @@ Temp_tempList muncArgs(T_expList args, F_accessList accs)
             ));
         } else {
             emit(AS_Oper(
-                get_heap_str("push `s0\n"), 
+                "push `s0\n", 
                 NULL, 
                 Temp_TempLists(munchExp(args->head), NULL), 
                 NULL
@@ -247,7 +247,7 @@ Temp_temp munchExp(T_exp e)
                     } else {
                         r_src = munchExp(right);
                         emit(AS_Move(
-                            get_heap_str("mov `d0, `s0\n"),
+                            "mov `d0, `s0\n",
                             Temp_TempList(r_dst, NULL),
                             Temp_TempList(munchExp(left), NULL)
                         ));
@@ -269,7 +269,7 @@ Temp_temp munchExp(T_exp e)
                         ));
                     } else {
                         emit(AS_Move(
-                            get_heap_str("mov `d0, `s0\n"),
+                            "mov `d0, `s0\n",
                             Temp_TempList(r_dst, NULL),
                             Temp_TempList(munchExp(left), NULL)
                         ));
@@ -282,44 +282,45 @@ Temp_temp munchExp(T_exp e)
                     ));
                     return r_dst;
                 case T_mul: {
-                    if (left->kind == T_CONST) {
+                   if (left->kind == T_CONST) {
                         r_src = munchExp(right);
                         emit(AS_Oper(
-                            get_heap_str("mov `d0, %d\n", left->u.CONST),
-                            Temp_TempLists(F_AX(), NULL),
+                            get_heap_str("mov `d0, %d\n",left->u.CONST),
+                            Temp_TempList(r_dst, NULL),
                             NULL, NULL
                         ));
-                    } else if (right->kind == T_CONST){
+                    } else if (right->kind == T_CONST) {
                         r_src = munchExp(left);
                         emit(AS_Oper(
-                            get_heap_str("mov `d0, %d\n", right->u.CONST),
-                            Temp_TempLists(F_AX(), NULL),
+                            get_heap_str("mov `d0, %d\n",right->u.CONST),
+                            Temp_TempList(r_dst, NULL),
                             NULL, NULL
                         ));
                     } else {
                         r_src = munchExp(right);
                         emit(AS_Move(
-                            get_heap_str("mov `d0, `s0\n"),
-                            Temp_TempLists(F_AX(), NULL),
-                            Temp_TempLists(munchExp(left), NULL)
+                            "mov `d0, `s0\n",
+                            Temp_TempList(r_dst, NULL),
+                            Temp_TempList(munchExp(left), NULL)
                         ));
                     }
-                    // Both rax, rdx are source and dest of the imul instruction
                     emit(AS_Oper(
-                        get_heap_str("imul `s0\n"),
-                        Temp_TempLists(F_AX(), F_DX(), NULL),
-                        Temp_TempLists(r_src, F_AX(), F_DX(), NULL),
-                        NULL
-                    ));
-                    emit(AS_Move(
-                        get_heap_str("mov `d0, `s0\n", left->u.CONST),
+                        get_heap_str("imul `d0, `s0\n", right->u.CONST),
                         Temp_TempLists(r_dst, NULL),
-                        Temp_TempLists(F_AX(), NULL)
+                        Temp_TempLists(r_src, r_dst, NULL), 
+                        NULL
                     ));
                     return r_dst;
                 }
                 case T_div: {
+                    // idiv xx: rdx:rax divide by xx, quotient in rax, remainder in rdx
                     r_src = munchExp(right);
+                    // clear rdx
+                    emit(AS_Oper(
+                        "mov `d0, 0\n",
+                        Temp_TempLists(F_DX(), NULL),
+                        NULL, NULL
+                    ));
                     if (left->kind == T_CONST) {
                         emit(AS_Oper(
                             get_heap_str("mov `d0, %d\n", left->u.CONST),
@@ -328,20 +329,21 @@ Temp_temp munchExp(T_exp e)
                         ));
                     } else {
                         emit(AS_Move(
-                            get_heap_str("mov `d0, `s0\n"),
+                            "mov `d0, `s0\n",
                             Temp_TempLists(F_AX(), NULL),
                             Temp_TempLists(munchExp(left), NULL)
                         ));
                     }
                     // Both rax, rdx are source and dest of the imul instruction
                     emit(AS_Oper(
-                        get_heap_str("idiv `s0\n"),
+                        "idiv `s0\n",
+                        // dst: rax, rdx
                         Temp_TempLists(F_AX(), F_DX(), NULL),
-                        Temp_TempLists(r_src, F_AX(), F_DX(), NULL),
+                        Temp_TempLists(r_src, F_AX(), NULL),
                         NULL
                     ));
                     emit(AS_Move(
-                        get_heap_str("mov `d0, `s0\n", left->u.CONST),
+                        "mov `d0, `s0\n",
                         Temp_TempLists(r_dst, NULL),
                         Temp_TempLists(F_AX(), NULL)
                     ));
@@ -404,7 +406,7 @@ Temp_temp munchExp(T_exp e)
             // if left until "use", instructions along the way will all create conflict
             // thus, use a fresh temp which can be spilled to replace rax
             emit(AS_Move(
-                get_heap_str("mov `d0, `s0\n"),
+                "mov `d0, `s0\n",
                 Temp_TempLists(r, NULL),
                 Temp_TempLists(F_RV(), NULL)
             ));
@@ -430,7 +432,7 @@ void munchStm(T_stm s)
             break;
         case T_JUMP:
             emit(AS_Oper(
-                get_heap_str("jmp `j0\n"),
+                "jmp `j0\n",
                 NULL, NULL,
                 AS_Targets(s->u.JUMP.jumps)
             ));
@@ -439,7 +441,7 @@ void munchStm(T_stm s)
             Temp_temp left = munchExp(s->u.CJUMP.left);
             Temp_temp right = munchExp(s->u.CJUMP.right);
             emit(AS_Oper(
-                get_heap_str("cmp `s0, `s1\n"),
+                "cmp `s0, `s1\n",
                 NULL,
                 Temp_TempLists(left, right, NULL),
                 NULL
@@ -490,7 +492,7 @@ void munchStm(T_stm s)
                 ));
             } else if (dst->kind == T_TEMP) { 
                 emit(AS_Move(
-                    get_heap_str("mov `d0, `s0\n"),
+                    "mov `d0, `s0\n",
                     Temp_TempLists(munchExp(s->u.MOVE.dst),NULL),
                     Temp_TempLists(munchExp(s->u.MOVE.src),NULL)
                 ));
@@ -519,7 +521,7 @@ AS_instrList F_codegen(F_frame f, T_stmList stmList)
                 func_formals[i] = Temp_newtemp();
             }
             emit(AS_Move(
-                get_heap_str("mov `d0, `s0\n"),
+                "mov `d0, `s0\n",
                 Temp_TempLists(func_formals[i], NULL),
                 Temp_TempLists(formals->head->u.reg,NULL)
             ));

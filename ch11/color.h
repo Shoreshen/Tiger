@@ -6,4 +6,4 @@ struct COL_result {
     Temp_tempList spills;
 };
 
-struct COL_result COL_color(G_graph ig, E_map initial, Temp_tempList regs);
+struct COL_result COL_color(G_graph ig, AS_instrList worklistMoves, E_map moveList, E_map spillCost);
