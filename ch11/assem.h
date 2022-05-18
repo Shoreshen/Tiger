@@ -54,3 +54,4 @@ AS_instrList AS_instrUnion(AS_instrList ta, AS_instrList tb);
 AS_instrList AS_instrMinus(AS_instrList ta, AS_instrList tb);
 AS_instrList AS_instrIntersect(AS_instrList ta, AS_instrList tb);
 int AS_instrInList(AS_instr i, AS_instrList il);
+void AS_clearList(AS_instrList il);

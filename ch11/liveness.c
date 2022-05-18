@@ -4,6 +4,7 @@
 #include "assem.h"
 #include "temp.h"
 #include "flowgraph.h"
+#include "frame.h"
 
 void enterLiveMap(E_map t, G_node flowNode, Temp_tempList s)
 {
@@ -72,9 +73,10 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
 {
     G_nodeList nodes = flow->mynodes;
     G_node node = NULL, n_dst = NULL, n_src = NULL, n_out = NULL;
-    G_node move_src = NULL, move_dst = NULL;
+    G_node n_move_src = NULL, n_move_dst = NULL;
     Temp_tempList t_src = NULL, t_dst = NULL, t_out = NULL;
-    AS_instr move_instr;
+    AS_instr i_move;
+    AS_instrList i_move_list;
     long spill;
 
     struct Live_graph lg = {
@@ -111,20 +113,23 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
                 printf("Error: move instruction has more than one source or destination.\n");
                 assert(0);
             }
-            move_instr = (AS_instr)G_nodeInfo(node);
-            Temp_enter(lg.moveList, t_src->head, move_instr);
-            Temp_enter(lg.moveList, t_dst->head, move_instr);
-            move_src = findOrCreateNode(t_map, lg.graph, t_src->head);
-            move_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
-            lg.worklistMoves = AS_instrUnion(lg.worklistMoves, AS_InstrList(move_instr, NULL));
+            i_move = (AS_instr)G_nodeInfo(node);
+            n_move_src = findOrCreateNode(t_map, lg.graph, t_src->head);
+            n_move_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
+            // handling moveList
+            i_move_list = AS_InstrList(i_move, E_look(lg.moveList, n_move_src));
+            E_enter(lg.moveList, n_move_src, i_move_list);
+            i_move_list = AS_InstrList(i_move, E_look(lg.moveList, n_move_dst));
+            E_enter(lg.moveList, n_move_dst, i_move_list);
+            // handling worklistMove
+            lg.worklistMoves = AS_instrUnion(lg.worklistMoves, AS_InstrList(i_move, NULL));
         }
         // Creating inference graph
         while (t_dst) {
             n_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
             while (t_out) {
                 n_out = findOrCreateNode(t_map, lg.graph, t_out->head);
-                if (n_out != n_dst && n_out != move_src && 
-                    !G_goesTo(n_out, n_dst) && !G_goesTo(n_dst, n_out)) {
+                if (n_out != n_dst && n_out != n_move_src && !G_adjacent(n_dst, n_out)) {
                     G_addEdge(n_out, n_dst);
                 }
                 t_out = t_out->tail;
@@ -147,4 +152,9 @@ struct Live_graph Live_liveness(G_graph flow)
     calc_liveMap(flow, in_map, out_map);
 
     return solveLiveness(flow, in_map, out_map);
+}
+
+int Live_preColored(G_node n)
+{
+    return pre_colored((Temp_temp)n->info);
 }

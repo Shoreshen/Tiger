@@ -207,3 +207,14 @@ int Temp_equal(Temp_tempList a, Temp_tempList b)
     E_clear(tmp_map);
     return (count_a == count_b);
 }
+void Temp_clearList(Temp_tempList tl)
+{
+    if (tl == NULL) {
+        return;
+    }
+    if (tl->tail) {
+        Temp_clearList(tl->tail);
+    }
+    free(tl);
+    tl = NULL;
+}

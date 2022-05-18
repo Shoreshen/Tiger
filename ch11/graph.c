@@ -23,7 +23,13 @@ G_nodeList G_NodeList(G_node head, G_nodeList tail)
     n->tail = tail;
     return n;
 }
-
+int G_adjacent(G_node a, G_node b)
+{
+    if (G_goesTo(a, b) || G_goesTo(b, a)) {
+        return TRUE;
+    }
+    return FALSE;
+}
 /* generic creation of G_node */
 G_node G_Node(G_graph g, void *info)
 {
@@ -75,7 +81,138 @@ void G_addEdge(G_node from, G_node to)
     from->succs = G_NodeList(to, from->succs);
 }
 
-static G_nodeList delete (G_node a, G_nodeList l)
+void G_clearNode(G_node n)
+{
+    if (n == NULL) {
+        return;
+    }
+    G_clearList(n->preds);
+    G_clearList(n->succs);
+    free(n);
+    n = NULL;
+}
+void G_sClearList(G_nodeList nl)
+{
+    if (nl == NULL) {
+        return;
+    }
+    if (nl->tail) {
+        G_clearList(nl->tail);
+    }
+    G_clearNode(nl->head);
+    free(nl);
+    nl = NULL;
+}
+void G_clearList(G_nodeList nl)
+{
+    if (nl == NULL) {
+        return;
+    }
+    if (nl->tail) {
+        G_clearList(nl->tail);
+    }
+    free(nl);
+    nl = NULL;
+}
+void G_clearGraph(G_graph g)
+{
+    if (G_Graph == NULL) {
+        return;
+    }
+    G_sClearList(g->mynodes);
+    free(g);
+    g = NULL;
+}
+G_nodeList G_union(G_nodeList a, G_nodeList b)
+{
+    if (!a) {
+        return b;
+    }
+    if (!b) {
+        return a;
+    }
+
+    E_map tmp_map = E_empty_env();
+    G_nodeList nl = NULL;
+    
+    while (a) {
+        E_enter(tmp_map, a->head, "valid");
+        nl = G_NodeList(a->head, nl);
+        a = a->tail;
+    }
+    
+    while (b) {
+        if (!E_look(tmp_map, b->head)) {
+            nl = G_NodeList(b->head, nl);
+        }
+        b = b->tail;
+    }
+    E_clear(tmp_map);
+    return nl;
+}
+G_nodeList G_intersect(G_nodeList a, G_nodeList b)
+{
+    if (!a) {
+        return b;
+    }
+    if (!b) {
+        return a;
+    }
+
+    E_map tmp_map = E_empty_env();
+    G_nodeList nl = NULL;
+    
+    while (a) {
+        E_enter(tmp_map, a->head, "valid");
+        a = a->tail;
+    }
+    
+    while (b) {
+        if (E_look(tmp_map, b->head)) {
+            nl = G_NodeList(b->head, nl);
+        }
+        b = b->tail;
+    }
+    E_clear(tmp_map);
+    return nl;
+}
+G_nodeList G_minus(G_nodeList a, G_nodeList b)
+{
+    if (!a) {
+        return b;
+    }
+    if (!b) {
+        return a;
+    }
+
+    E_map tmp_map = E_empty_env();
+    G_nodeList nl = NULL;
+    
+    while (b) {
+        E_enter(tmp_map, b->head, "valid");
+        b = b->tail;
+    }
+    
+    while (a) {
+        if (!E_look(tmp_map, a->head)) {
+            nl = G_NodeList(a->head, nl);
+        }
+        a = a->tail;
+    }
+    E_clear(tmp_map);
+    return nl;
+}
+int G_inList(G_nodeList a, G_node b)
+{
+    while (a) {
+        if (a->head == b) {
+            return TRUE;
+        }
+        a = a->tail;
+    }
+    return FALSE;
+}
+static G_nodeList delete(G_node a, G_nodeList l)
 {
     assert(a && l);
     if (a == l->head) {

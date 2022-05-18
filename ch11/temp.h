@@ -35,3 +35,4 @@ Temp_tempList Temp_union(Temp_tempList a, Temp_tempList b);
 Temp_tempList Temp_intersect(Temp_tempList a, Temp_tempList b);
 Temp_tempList Temp_minus(Temp_tempList a, Temp_tempList b);
 int Temp_equal(Temp_tempList a, Temp_tempList b);
+void Temp_clearList(Temp_tempList tl);

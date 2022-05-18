@@ -59,6 +59,7 @@ Temp_temp F_RV();
 Temp_temp F_AX();
 Temp_temp F_DX();
 Temp_temp F_Keep_Regs(int i);
+int pre_colored(Temp_temp t);
 T_exp F_Exp(F_access acc, T_exp framePtr);
 F_fragList F_FragList(F_frag head, F_fragList tail);
 F_accessList F_AccessList(F_access head, F_accessList tail);
@@ -72,4 +73,4 @@ AS_proc F_procEntryExit(F_frame frame, AS_instrList body);
 void F_printFrags(FILE* out, F_fragList frags);
 
 extern const int F_WORD_SIZE;
-extern const int F_KEEP;
+extern const int F_COLORABLE_REGS;

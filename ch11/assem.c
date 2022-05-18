@@ -280,3 +280,14 @@ int AS_instrInList(AS_instr i, AS_instrList il)
     }
     return FALSE;
 }
+void AS_clearList(AS_instrList il)
+{
+    if (il == NULL) {
+        return;
+    }
+    if (il->tail) {
+        AS_clearList(il->tail);
+    }
+    free(il);
+    il = NULL;
+}

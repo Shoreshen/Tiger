@@ -73,3 +73,17 @@ void G_enter(E_map t, G_node node, void *value);
 
 /* Tell what "node" maps to in table "t" */
 void *G_look(E_map t, G_node node);
+
+/* Tell if "node" a, b adjacent */
+int G_adjacent(G_node a, G_node b);
+
+/* Graph clearing */
+void G_clearNode(G_node n);
+void G_clearList(G_nodeList nl);
+void G_clearGraph(G_graph g);
+
+/* Graph node set operation */
+G_nodeList G_union(G_nodeList a, G_nodeList b);
+G_nodeList G_intersect(G_nodeList a, G_nodeList b);
+G_nodeList G_minus(G_nodeList a, G_nodeList b);
+int G_inList(G_nodeList a, G_node b);

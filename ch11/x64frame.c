@@ -6,6 +6,7 @@
 
 #define F_KEEP 6 // keep 6 formal param in registers
 const int F_WORD_SIZE = 8; // x64 architecture
+const int F_COLORABLE_REGS = 14;
 // RBP, RSP not participate in coloring
 enum REG {
     x64_RDI = 0,
@@ -44,6 +45,13 @@ char* x64_reg_names[16] = {
     "rbp",
     "rsp"
 };
+int pre_colored(Temp_temp t)
+{
+    if (t->num < PRE_COLOR_LIMIT) {
+        return TRUE;
+    }
+    return FALSE;
+}
 Temp_temp get_x64_reg(enum REG reg)
 {
     if (!x64_regs_temp[reg]) {
