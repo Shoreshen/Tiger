@@ -72,9 +72,9 @@ void calc_liveMap(G_graph flow, E_map in_map, E_map out_map)
 struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
 {
     G_nodeList nodes = flow->mynodes;
-    G_node node = NULL, n_dst = NULL, n_src = NULL, n_out = NULL;
+    G_node node = NULL, n_dst = NULL, n_src = NULL, n_out = NULL, n_spill;
     G_node n_move_src = NULL, n_move_dst = NULL;
-    Temp_tempList t_src = NULL, t_dst = NULL, t_out = NULL;
+    Temp_tempList t_src = NULL, t_dst = NULL, t_out = NULL, t_spill;
     AS_instr i_move;
     AS_instrList i_move_list;
     long spill;
@@ -93,19 +93,14 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
         t_dst = FG_def(node);
         t_out = (Temp_tempList)G_look(out_map, node);
         // calculate spill cost
-        while (t_dst) {
-            n_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
+        t_spill = Temp_union(t_dst, t_src);
+        while (t_spill) {
+            n_spill = findOrCreateNode(t_map, lg.graph, t_spill->head);
             // will be 0 if node not exists
-            spill = (long)E_look(lg.spillCost, n_dst);
-            E_enter(lg.spillCost, n_dst, (void*)spill++);
-            t_dst = t_dst->tail;
-        }
-        while (t_src) {
-            n_src = findOrCreateNode(t_map, lg.graph, t_src->head);
-            // will be 0 if node not exists
-            spill = (long)E_look(lg.spillCost, n_src);
-            E_enter(lg.spillCost, n_src, (void*)spill++);
-            t_src = t_src->tail;
+            spill = (long)E_look(lg.spillCost, n_spill);
+            spill++;
+            E_enter(lg.spillCost, n_spill, (void*)spill);
+            t_spill = t_spill->tail;
         }
         // special dealt with move (mov tmp, tmp)
         if (FG_isMove(node)) {

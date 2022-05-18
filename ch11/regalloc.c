@@ -26,11 +26,11 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il)
 
     while (TRUE) {
         flow = FG_AssemFlowGraph(il);
-        // fprintf(stdout, "**********************************\n");
-        // G_show(stdout, G_nodes(flow), print_inst);
+        fprintf(stdout, "**********************************\n");
+        G_show(stdout, G_nodes(flow), print_inst);
         live = Live_liveness(flow);
-        // fprintf(stdout, "**********************************\n");
-        // G_show(stdout, G_nodes(live.graph), print_temp);
+        fprintf(stdout, "**********************************\n");
+        G_show(stdout, G_nodes(live.graph), print_temp);
         break;
     }
     return ra;
