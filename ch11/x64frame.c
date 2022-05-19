@@ -6,7 +6,7 @@
 
 #define F_KEEP 6 // keep 6 formal param in registers
 const int F_WORD_SIZE = 8; // x64 architecture
-const int F_COLORABLE_REGS = 14;
+const int F_COLORABLE_REGS = 16;
 // RBP, RSP not participate in coloring
 enum REG {
     x64_RDI = 0,
@@ -62,7 +62,6 @@ Temp_temp get_x64_reg(enum REG reg)
     }
     return x64_regs_temp[reg];
 }
-
 T_exp F_Exp(F_access acc, T_exp framePtr) {
     if (acc->kind == F_inFrame) {
         return T_Mem(T_Binop(T_plus, framePtr, T_Const(acc->u.offset)));

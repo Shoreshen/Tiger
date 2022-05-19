@@ -74,6 +74,7 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
     G_nodeList nodes = flow->mynodes;
     G_node node = NULL, n_dst = NULL, n_src = NULL, n_out = NULL, n_spill;
     G_node n_move_src = NULL, n_move_dst = NULL;
+    G_node n_sp, n_fp;
     Temp_tempList t_src = NULL, t_dst = NULL, t_out = NULL, t_spill;
     AS_instr i_move;
     AS_instrList i_move_list;
@@ -83,9 +84,13 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
         .graph = G_Graph(),
         .worklistMoves = NULL,
         .moveList = Temp_empty(),
-        .spillCost = E_empty_env()
+        .spillCost = E_empty_env(),
+        .tmp2node = E_empty_env()
     };
-    E_map t_map = Temp_empty();
+    
+
+    n_sp = findOrCreateNode(lg.tmp2node, lg.graph, F_SP());
+    n_fp = findOrCreateNode(lg.tmp2node, lg.graph, F_FP());
 
     while(nodes) {
         node = nodes->head;
@@ -95,7 +100,7 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
         // calculate spill cost
         t_spill = Temp_union(t_dst, t_src);
         while (t_spill) {
-            n_spill = findOrCreateNode(t_map, lg.graph, t_spill->head);
+            n_spill = findOrCreateNode(lg.tmp2node, lg.graph, t_spill->head);
             // will be 0 if node not exists
             spill = (long)E_look(lg.spillCost, n_spill);
             spill++;
@@ -109,8 +114,8 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
                 assert(0);
             }
             i_move = (AS_instr)G_nodeInfo(node);
-            n_move_src = findOrCreateNode(t_map, lg.graph, t_src->head);
-            n_move_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
+            n_move_src = findOrCreateNode(lg.tmp2node, lg.graph, t_src->head);
+            n_move_dst = findOrCreateNode(lg.tmp2node, lg.graph, t_dst->head);
             // handling moveList
             i_move_list = AS_InstrList(i_move, E_look(lg.moveList, n_move_src));
             E_enter(lg.moveList, n_move_src, i_move_list);
@@ -121,21 +126,25 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
         }
         // Creating inference graph
         while (t_dst) {
-            n_dst = findOrCreateNode(t_map, lg.graph, t_dst->head);
+            n_dst = findOrCreateNode(lg.tmp2node, lg.graph, t_dst->head);
             while (t_out) {
-                n_out = findOrCreateNode(t_map, lg.graph, t_out->head);
+                n_out = findOrCreateNode(lg.tmp2node, lg.graph, t_out->head);
                 if (n_out != n_dst && n_out != n_move_src && !G_adjacent(n_dst, n_out)) {
                     G_addEdge(n_out, n_dst);
                 }
                 t_out = t_out->tail;
             }
+            // SP & FP interfere with all other virtual registers
+            if (n_sp != n_dst && !G_adjacent(n_dst, n_sp)) {
+                G_addEdge(n_sp, n_dst);
+            }
+            if (n_fp != n_dst && !G_adjacent(n_dst, n_fp)) {
+                G_addEdge(n_fp, n_dst);
+            }
             t_dst = t_dst->tail;
         }
         nodes = nodes->tail;
     }
-    E_clear(t_map);
-    E_clear(in_map);
-    E_clear(out_map);
     return lg;
 }
 

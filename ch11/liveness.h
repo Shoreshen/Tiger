@@ -6,6 +6,7 @@ struct Live_graph {
     AS_instrList worklistMoves;
     E_map moveList;
     E_map spillCost;
+    E_map tmp2node;
 };
 
 Temp_temp Live_gtemp(G_node n);

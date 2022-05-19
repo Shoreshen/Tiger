@@ -5,6 +5,7 @@
 #include "liveness.h"
 #include "assem.h"
 #include "temp.h"
+#include "color.h"
 
 void print_inst(void* info)
 {
@@ -22,15 +23,16 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il)
 {
     struct RA_result ra;
     G_graph flow;
-    struct Live_graph live;
+    struct Live_graph lg;
 
     while (TRUE) {
         flow = FG_AssemFlowGraph(il);
         fprintf(stdout, "**********************************\n");
         G_show(stdout, G_nodes(flow), print_inst);
-        live = Live_liveness(flow);
+        lg = Live_liveness(flow);
         fprintf(stdout, "**********************************\n");
-        G_show(stdout, G_nodes(live.graph), print_temp);
+        G_show(stdout, G_nodes(lg.graph), print_temp);
+        COL_color(lg.graph, lg.worklistMoves, lg.moveList, lg.spillCost, lg.tmp2node);
         break;
     }
     return ra;

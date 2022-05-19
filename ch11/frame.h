@@ -71,6 +71,7 @@ F_access F_GetAccess(int *regCount, int *memCount, int escape);
 T_exp F_externalCall(char *s, T_expList args, F_accessList accs);
 AS_proc F_procEntryExit(F_frame frame, AS_instrList body);
 void F_printFrags(FILE* out, F_fragList frags);
+Temp_tempList F_rm_uncolorable_regs(Temp_tempList a);
 
 extern const int F_WORD_SIZE;
 extern const int F_COLORABLE_REGS;
