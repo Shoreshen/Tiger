@@ -96,6 +96,7 @@ typedef struct AS_proc_ *AS_proc;
 
 #pragma region x64 frame
 // frame.h
+#define F_COLORABLE_REGS 16
 typedef struct F_fragList_ *F_fragList;
 typedef struct F_accessList_ *F_accessList;
 typedef struct F_frame_ *F_frame;

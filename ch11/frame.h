@@ -74,4 +74,4 @@ void F_printFrags(FILE* out, F_fragList frags);
 Temp_tempList F_rm_uncolorable_regs(Temp_tempList a);
 
 extern const int F_WORD_SIZE;
-extern const int F_COLORABLE_REGS;
+extern char* x64_reg_names[F_COLORABLE_REGS];

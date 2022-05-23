@@ -119,14 +119,26 @@ void format(char *result, char *assem, Temp_tempList dst, Temp_tempList src, AS_
             switch (*(++p)) {
                 case 's': {
                     int n = atoi(++p);
-                    char *s = Temp_look(m, nthTemp(src, n));
+                    Temp_temp t = nthTemp(src, n);
+                    char *s = NULL;
+                    if (pre_colored(nthTemp(src, n))) {
+                        s = x64_reg_names[t->num];
+                    } else {
+                        s = Temp_look(m, nthTemp(src, n));
+                    }
                     strcpy(result + i, s);
                     i += strlen(s);
                     break;
                 }
                 case 'd': {
                     int n = atoi(++p);
-                    char *s = Temp_look(m, nthTemp(dst, n));
+                    Temp_temp t = nthTemp(src, n);
+                    char *s = NULL;
+                    if (pre_colored(nthTemp(src, n))) {
+                        s = x64_reg_names[t->num];
+                    } else {
+                        s = Temp_look(m, nthTemp(src, n));
+                    }
                     strcpy(result + i, s);
                     i += strlen(s);
                     break;

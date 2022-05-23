@@ -12,13 +12,20 @@ E_map moveList;
 E_map spillCost;
 E_map alias;
 E_map tmp2node;
+E_map coloring;
 AS_instrList worklistMoves;
 AS_instrList activeMoves;
+AS_instrList coalescedMoves;
+AS_instrList constrainedMoves;
+AS_instrList frozenMoves;
 G_nodeList spillWorklist;
 G_nodeList freezeWorklist;
 G_nodeList simplifyWorklist;
 G_nodeList selectStack;
 G_nodeList coalescedNodes;
+G_nodeList coloredNodes;
+G_nodeList precoloredNodes;
+G_nodeList spilledNodes;
 
 void calc_degree(G_graph ig)
 {
@@ -27,6 +34,7 @@ void calc_degree(G_graph ig)
     while(nodes) {
         if (Live_preColored(nodes->head)) {
             E_enter(map_degree, nodes->head, (void*)999);
+            precoloredNodes = G_NodeList(nodes->head, precoloredNodes);
         } else {
             deg = 0; 
             preds = nodes->head->preds;
@@ -49,17 +57,24 @@ void initData(G_graph ig_in, AS_instrList worklistMoves_in, E_map moveList_in, E
     ig                  = ig_in;
     map_degree          = E_empty_env();
     alias               = E_empty_env();
+    coloring            = E_empty_env();
     worklistMoves       = worklistMoves_in;
     moveList            = moveList_in;
     spillCost           = spillCost_in;
     tmp2node            = tmp2node_in;
     worklistMoves       = NULL;
     activeMoves         = NULL;
+    coalescedMoves      = NULL;
+    constrainedMoves    = NULL;
+    frozenMoves         = NULL;
     spillWorklist       = NULL;
     freezeWorklist      = NULL;
     simplifyWorklist    = NULL;
     selectStack         = NULL;
     coalescedNodes      = NULL;
+    coloredNodes        = NULL;
+    precoloredNodes     = NULL;
+    spilledNodes        = NULL;
     calc_degree(ig);
 }
 AS_instrList NodeMoves(G_node n)
@@ -147,7 +162,7 @@ int OK(G_node t, G_node r)
     long degree = (long)E_look(map_degree, t);
     return (degree < F_COLORABLE_REGS || Live_preColored(t) || G_adjacent(t, r));
 }
-int Conservative(G_nodeList nodes)
+int Briggs(G_nodeList nodes)
 {
     int k = 0;
     long degree;
@@ -159,6 +174,16 @@ int Conservative(G_nodeList nodes)
         nodes = nodes->tail;
     }
     return k < F_COLORABLE_REGS;
+}
+int GeorGe(G_node u, G_node v)
+{
+    G_nodeList nodes = G_adj(v);
+    while (nodes) {
+        if (!OK(nodes->head, u)) {
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
 G_node GetAlias(G_node n)
 {
@@ -229,6 +254,117 @@ void Coalesce()
             u = v;
             v = tmp;
         }
+        if (u == v) {
+            coalescedMoves = AS_instrUnion(coalescedMoves, AS_InstrList(i_m, NULL));
+            AddWorkList(u);
+        } else if (Live_preColored(v) || G_adjacent(u, v)) {
+            constrainedMoves = AS_instrUnion(constrainedMoves, AS_InstrList(i_m, NULL));
+            AddWorkList(u);
+            AddWorkList(v);
+        } else if (
+            (Live_preColored(u) && GeorGe(u,v)) ||
+            (!Live_preColored(u) && Briggs(G_union(G_adj(u),G_adj(v))))
+        ) {
+            coalescedMoves = AS_instrUnion(coalescedMoves, AS_InstrList(i_m, NULL));
+            Combine(u, v);
+            AddWorkList(u);
+        } else {
+            activeMoves = AS_instrUnion(activeMoves, AS_InstrList(i_m, NULL));
+        }
+    }
+}
+void FreezeMoves(G_node u)
+{
+    AS_instrList i_ml = NodeMoves(u);
+    G_node x = NULL, y = NULL, v = NULL;
+    long degree;
+    while(i_ml) {
+        x = (G_node)E_look(tmp2node, i_ml->head->u.MOVE.src->head);
+        y = (G_node)E_look(tmp2node, i_ml->head->u.MOVE.dst->head);
+        if (GetAlias(y) == GetAlias(u)) {
+            v = GetAlias(x);
+        } else {
+            v = GetAlias(y);
+        }
+        activeMoves = AS_instrMinus(activeMoves, AS_InstrList(i_ml->head, NULL));
+        frozenMoves = AS_instrUnion(frozenMoves, AS_InstrList(i_ml->head, NULL));
+        degree = (long)E_look(map_degree, v);
+        if (NodeMoves(v) == NULL && degree < F_COLORABLE_REGS) {
+            freezeWorklist = G_minus(freezeWorklist, G_NodeList(v, NULL));
+            simplifyWorklist = G_union(simplifyWorklist, G_NodeList(v, NULL));
+        }
+    }
+}
+void Freeze()
+{
+    G_node u = NULL;
+    while (freezeWorklist) {
+        u = freezeWorklist->head;
+        freezeWorklist = freezeWorklist->tail;
+        simplifyWorklist = G_union(simplifyWorklist, G_NodeList(u, NULL));
+        FreezeMoves(u);
+    }
+}
+void SelectSpill()
+{
+    G_nodeList nodes = spillWorklist;
+    G_node n_min = NULL;
+    double min_priority = 9999.0f, priority;
+    long degree, cost;
+    while (nodes) {
+        degree = (long)E_look(map_degree, nodes->head);
+        cost = (long)E_look(spillCost, nodes->head);
+        priority = (double)degree / (double)cost;
+        if (priority < min_priority) {
+            n_min = nodes->head;
+            min_priority = priority;
+        }
+        nodes = nodes->tail;
+    }
+    spillWorklist = G_minus(spillWorklist, G_NodeList(n_min, NULL));
+    simplifyWorklist = G_union(simplifyWorklist, G_NodeList(n_min, NULL));
+    FreezeMoves(n_min);
+}
+char regs[F_COLORABLE_REGS];
+long pick_color()
+{
+    int i;
+    for (i = 0; i < F_COLORABLE_REGS; i++) {
+        if (regs[i]) {
+            return i;
+        }
+    }
+    return -1;
+}
+void AssignColors()
+{
+    G_node n = NULL, w = NULL;
+    G_nodeList n_adjs = NULL;
+    long color;
+    while(selectStack) {
+        n = selectStack->head;
+        selectStack = selectStack->tail;
+        n_adjs = Adjacent(n);
+        memset(&regs[0], 0, sizeof(regs));
+        while (n_adjs) {
+            w = n_adjs->head;
+            if (G_inList(G_union(coloredNodes, precoloredNodes), w)) {
+                color = ((Temp_temp)w->info)->num;
+                if (color >= 0 && color < F_COLORABLE_REGS) {
+                    regs[color] = 1;
+                } else {
+                    assert(0);
+                }
+            }
+            n_adjs = n_adjs->tail;
+        }
+        color = pick_color();
+        if (color == -1) {
+            spilledNodes = G_union(spilledNodes, G_NodeList(n, NULL));
+        } else {
+            ((Temp_temp)w->info)->num = color;
+            coloredNodes = G_union(coloredNodes, G_NodeList(n, NULL));
+        }
     }
 }
 struct COL_result COL_color(G_graph ig_in, AS_instrList worklistMoves_in, E_map moveList_in, E_map spillCost_in, E_map tmp2node_in)
@@ -240,11 +376,21 @@ struct COL_result COL_color(G_graph ig_in, AS_instrList worklistMoves_in, E_map 
         if (simplifyWorklist) {
             Simplify();
         } else if (worklistMoves) {
-
+            Coalesce();
         } else if (freezeWorklist) {
-
+            Freeze();
         } else if (spillWorklist) {
-
+            SelectSpill();
         }
     }
+    AssignColors();
+    Temp_tempList spill = NULL;
+    while (spilledNodes) {
+        spill = Temp_TempList((Temp_temp)spilledNodes->head->info, spill);
+        spilledNodes = spilledNodes->tail;
+    }
+    return (struct COL_result){
+        .coloring = coloring,
+        .spills = spill
+    };
 }
