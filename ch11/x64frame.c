@@ -14,16 +14,16 @@ enum REG {
     x64_RCX = 3,
     x64_R8  = 4,
     x64_R9  = 5, //First 6 registers are used for passing parameters
-    x64_RAX = 6,
+    x64_RBP = 6,
+    x64_RSP = 7,
+    x64_RAX = 8,
     x64_RBX = 7,
-    x64_R10 = 8,
-    x64_R11 = 9,
-    x64_R12 = 10,
-    x64_R13 = 11,
-    x64_R14 = 12,
-    x64_R15 = 13,
-    x64_RBP = 14,
-    x64_RSP = 15
+    x64_R10 = 9,
+    x64_R11 = 10,
+    x64_R12 = 11,
+    x64_R13 = 12,
+    x64_R14 = 13,
+    x64_R15 = 14,
 };
 Temp_temp x64_regs_temp[F_COLORABLE_REGS] = { NULL };
 char* x64_reg_names[F_COLORABLE_REGS] = {
@@ -33,6 +33,8 @@ char* x64_reg_names[F_COLORABLE_REGS] = {
     "rcx",
     "r8",
     "r9",
+    "rbp",
+    "rsp",
     "rax",
     "rbx",
     "r10",
@@ -40,9 +42,7 @@ char* x64_reg_names[F_COLORABLE_REGS] = {
     "r12",
     "r13",
     "r14",
-    "r15",
-    "rbp",
-    "rsp"
+    "r15"
 };
 int pre_colored(Temp_temp t)
 {
@@ -51,7 +51,7 @@ int pre_colored(Temp_temp t)
     }
     return FALSE;
 }
-Temp_temp get_x64_reg(enum REG reg)
+Temp_temp get_x64_reg(int reg)
 {
     if (!x64_regs_temp[reg]) {
         Temp_temp p = checked_malloc(sizeof(*p));

@@ -17,6 +17,8 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
 {
     T_stmList stm_l;
     AS_instrList iList;
+    struct RA_result ra;
+    
     // Printing
     fprintf(out, "====================================================================\n");
     fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
@@ -37,10 +39,11 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
     iList = F_codegen(frame, stm_l);
     // AS_proc iproc = F_procEntryExit(frame, iList);
     AS_printInstrList(out, iList, Temp_name());
-    RA_regAlloc(frame, iList);
+    ra = RA_regAlloc(frame, iList);
 
-    // fprintf(out, "**********************************\n");
-    // fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
+    fprintf(out, "**********************************\n");
+    fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
+    AS_printInstrList(out, iList, ra.coloring);
 
     // fprintf(out, "====================================================================\n");
 }

@@ -59,6 +59,7 @@ Temp_temp F_RV();
 Temp_temp F_AX();
 Temp_temp F_DX();
 Temp_temp F_Keep_Regs(int i);
+Temp_temp get_x64_reg(int reg);
 int pre_colored(Temp_temp t);
 T_exp F_Exp(F_access acc, T_exp framePtr);
 F_fragList F_FragList(F_frag head, F_fragList tail);
@@ -74,4 +75,4 @@ void F_printFrags(FILE* out, F_fragList frags);
 Temp_tempList F_rm_uncolorable_regs(Temp_tempList a);
 
 extern const int F_WORD_SIZE;
-extern char* x64_reg_names[F_COLORABLE_REGS];
+extern char* x64_reg_names[16];

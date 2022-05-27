@@ -6,28 +6,12 @@
 
 Temp_tempList FG_def(G_node n)
 {
-    AS_instr i = (AS_instr) n->info;
-    switch (i->kind)
-    {
-        case I_OPER:
-            return i->u.OPER.dst;
-        case I_MOVE:
-            return i->u.MOVE.dst;
-    }
-    return NULL;
+    return AS_def((AS_instr) n->info);
 }
 
 Temp_tempList FG_use(G_node n)
 {
-    AS_instr i = (AS_instr) n->info;
-    switch (i->kind)
-    {
-        case I_OPER:
-            return i->u.OPER.src;
-        case I_MOVE:
-            return i->u.MOVE.src;
-    }
-    return NULL;
+    return AS_use((AS_instr) n->info);
 }
 
 int FG_isMove(G_node n)

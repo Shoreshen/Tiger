@@ -94,7 +94,7 @@ run_ch8:ch8.out
 	bison -d -Wcounterexamples -o ./ch9/tiger.tab.c $<
 ./ch9/tiger.yy.c:./ch9/tiger.tab.h ./ch9/tiger.l
 	flex --outfile=$@ ./ch9/tiger.l
-ch9.out:./ch9/tiger.yy.c ./ch9/tiger.tab.c ./ch9/tiger.tab.h ./ch9/*.c
+ch9.out:./ch9/tiger.yy.c ./ch9/tiger.tab.c ./ch9/tiger.tab.h ./ch9/*.c 
 	gcc $(CFLAGS) ./ch9/*.c -o $@
 run_ch9:ch9.out
 	@echo "Please type in file names: "; \
@@ -116,7 +116,7 @@ run_ch10:ch10.out
 	bison -d -Wcounterexamples -o ./ch11/tiger.tab.c $<
 ./ch11/tiger.yy.c:./ch11/tiger.tab.h ./ch11/tiger.l
 	flex --outfile=$@ ./ch11/tiger.l
-ch11.out:./ch11/tiger.yy.c ./ch11/tiger.tab.c ./ch11/tiger.tab.h ./ch11/*.c
+ch11.out:./ch11/tiger.yy.c ./ch11/tiger.tab.c ./ch11/tiger.tab.h ./ch11/*.c ./ch11/*.h
 	gcc $(CFLAGS) ./ch11/*.c -o $@
 run_ch11:ch11.out
 	@echo "Please type in file names: "; \
@@ -124,7 +124,7 @@ run_ch11:ch11.out
 	./$< $$file
 # Clean =========================================================================================
 clean:
-	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log\
+	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log \
 	    ./ch2/*.yy.c \
 	    ./ch3/*.yy.c ./ch3/*.tab.* \
 	    ./ch4/*.yy.c ./ch4/*.tab.* \

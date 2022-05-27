@@ -132,12 +132,12 @@ void format(char *result, char *assem, Temp_tempList dst, Temp_tempList src, AS_
                 }
                 case 'd': {
                     int n = atoi(++p);
-                    Temp_temp t = nthTemp(src, n);
+                    Temp_temp t = nthTemp(dst, n);
                     char *s = NULL;
-                    if (pre_colored(nthTemp(src, n))) {
+                    if (pre_colored(nthTemp(dst, n))) {
                         s = x64_reg_names[t->num];
                     } else {
-                        s = Temp_look(m, nthTemp(src, n));
+                        s = Temp_look(m, nthTemp(dst, n));
                     }
                     strcpy(result + i, s);
                     i += strlen(s);
@@ -302,4 +302,38 @@ void AS_clearList(AS_instrList il)
     }
     free(il);
     il = NULL;
+}
+void AS_InsertAfter(AS_instrList il, AS_instr i)
+{
+    if (!il) {
+        assert(0);
+    }
+    il->tail = AS_InstrList(i, il->tail);
+}
+void AS_RmAfter(AS_instrList il)
+{
+    il->tail = il->tail->tail;
+}
+Temp_tempList AS_def(AS_instr i)
+{
+    switch (i->kind)
+    {
+        case I_OPER:
+            return i->u.OPER.dst;
+        case I_MOVE:
+            return i->u.MOVE.dst;
+    }
+    return NULL;
+}
+
+Temp_tempList AS_use(AS_instr i)
+{
+    switch (i->kind)
+    {
+        case I_OPER:
+            return i->u.OPER.src;
+        case I_MOVE:
+            return i->u.MOVE.src;
+    }
+    return NULL;
 }

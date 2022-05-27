@@ -1,13 +1,9 @@
 let 
-	var a:int := 1
-	var g:int := 2
-	function inc(f:int) : int = 
-		f + a
-	function add (b:int, c:int, f:int) : int =
+	function add (i:int, j:int, k:int) : int =
 		let 
-			var e := 7
 		in 
-			inc(b) * c + a
+			k := i*2 + j + k;
+			k
 		end
 in
 	/* BODY OF MAIN PROGRAM */
