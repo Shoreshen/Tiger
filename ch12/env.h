@@ -38,3 +38,5 @@ E_map E_base_tenv(void);
 E_map E_empty_env(void);
 E_enventry E_VarEntry(Tr_access access, Ty_ty ty);
 E_enventry E_FunEntry(Tr_level level, Temp_label label, Ty_tyList formals, Ty_ty result);
+
+extern char* syscalls;

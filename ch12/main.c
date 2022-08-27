@@ -12,6 +12,7 @@
 #include "assem.h"
 #include "codegen.h"
 #include "regalloc.h"
+#include "env.h"
 
 void do_proc(FILE *out, F_frame frame, T_stm body)
 {
@@ -59,6 +60,7 @@ int main(int argc, char **argv) {
     Esc_findEscape(ast_root);
     frags_head = SEM_transProg(ast_root);
     // Lowering & print asm
+    fprintf(out, "%s\n", syscalls);
     fprintf(out, "segment .note.GNU-stack\n");
     fprintf(out, "segment .text\n");
     frags = frags_head;

@@ -5,6 +5,21 @@
 #include "translate.h"
 #include "temp.h"
 
+char* syscalls = 
+    "extern print\n"
+    "extern flush\n"
+    "extern getchar\n"
+    "extern ord\n"
+    "extern chr\n"
+    "extern size\n"
+    "extern substring\n"
+    "extern concat\n"
+    "extern not\n"
+    "extern exit\n"
+    "extern check_malloc\n"
+    "extern stringEqual\n"
+;
+
 void E_map_push(E_map* stack) {
     E_map tmp = (E_map) checked_malloc(sizeof(struct E_map_));
     tmp->table = NULL;

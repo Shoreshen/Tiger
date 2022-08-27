@@ -154,7 +154,7 @@ AS_proc F_procEntryExit(F_frame frame, AS_instrList body)
         ),
         procExit
     );
-    return AS_Proc(get_heap_str("# PROCEDURE %s START\n", S_name(frame->fun_name)), body, get_heap_str("# %s END\n", S_name(frame->fun_name)));
+    return AS_Proc(get_heap_str("; PROCEDURE %s START\n", S_name(frame->fun_name)), body, get_heap_str("; %s END\n", S_name(frame->fun_name)));
 }
 
 void F_printFrags(FILE* out, F_fragList frags)
