@@ -16,7 +16,7 @@ struct Tr_expList_ {
 
 // level 
 Tr_level Tr_outermost(void);
-Tr_level Tr_newLevel(Tr_level parent, U_boolList formals);
+Tr_level Tr_newLevel(Tr_level parent, U_boolList formals, S_symbol fun_name);
 Tr_access Tr_allocLocal(Tr_level level, int escape);
 Tr_accessList Tr_formals(Tr_level level);
 Temp_label Tr_name(Tr_level level);

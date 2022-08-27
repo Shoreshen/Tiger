@@ -7,6 +7,7 @@ typedef struct F_frag_ *F_frag;
 
 struct F_frame_ {
     Temp_label name;
+    S_symbol fun_name;
     F_accessList formals;
     F_accessList locals;
     int inFrame_count;
@@ -49,7 +50,7 @@ struct F_fragList_ {
     F_fragList tail;
 };
 
-F_frame F_newFrame(Temp_label name, U_boolList formals);
+F_frame F_newFrame(Temp_label name, U_boolList formals, S_symbol fun_name);
 F_accessList F_formals(F_frame f);
 F_access F_allocLocal(F_frame f, int escape);
 Temp_label F_name(F_frame f);

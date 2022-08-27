@@ -426,7 +426,7 @@ void munchStm(T_stm s)
             break;
         case T_LABEL:
             emit(AS_Label(
-                get_heap_str("%s\n", S_name(s->u.LABEL)),
+                get_heap_str("%s:\n", S_name(s->u.LABEL)),
                 s->u.LABEL
             ));
             break;

@@ -47,7 +47,7 @@ void append_str(struct string* str, char* src)
 
 char* get_heap_str(char* format, ...)
 {
-    char buf[256];
+    char buf[512];
     char* heap_str;
     va_list args;
 
@@ -55,7 +55,7 @@ char* get_heap_str(char* format, ...)
     vsnprintf(&buf[0], sizeof(buf), format, args);
     va_end(args);
 
-    heap_str = checked_malloc(strlen(&buf[0]));
+    heap_str = checked_malloc(strlen(&buf[0]) + 1);
     strcpy(heap_str, &buf[0]);
     return heap_str;
 }

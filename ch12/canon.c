@@ -163,7 +163,7 @@ T_stm do_stm(T_stm stm)
                 stm
             );
         case T_MOVE:
-            // If left is T_TEMP, it will be written by the right anyway ,thus trivial
+            // If dst is T_TEMP, it will be written by the src anyway ,thus trivial
             if (stm->u.MOVE.dst->kind == T_TEMP && stm->u.MOVE.src->kind == T_CALL) {
                 // Though T_Call() will effect RV
                 // but in this case T_Temp() will not commute with RV
@@ -215,8 +215,7 @@ T_stmList linear(T_stm stm, T_stmList right)
 {
     if (stm->kind == T_SEQ) {
         return linear(stm->u.SEQ.left, linear(stm->u.SEQ.right, right));
-    }
-    else {
+    } else {
         return T_StmList(stm, right);
     }
 }

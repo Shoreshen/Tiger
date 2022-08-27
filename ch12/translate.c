@@ -189,7 +189,7 @@ Tr_level Tr_outermost(void)
     if (out_most == NULL) {
         out_most = checked_malloc(sizeof(*out_most));
         out_most->parent = NULL;
-        out_most->frame = F_newFrame(Temp_newlabel(), NULL);
+        out_most->frame = F_newFrame(Temp_newlabel(), NULL, S_Symbol("top_level"));
         out_most->formals = NULL;
     }
     return out_most;
@@ -211,12 +211,12 @@ Tr_access Tr_Access(Tr_level level, F_access access)
     return a;
 }
 
-Tr_level Tr_newLevel(Tr_level parent, U_boolList formals)
+Tr_level Tr_newLevel(Tr_level parent, U_boolList formals, S_symbol fun_name)
 {
     Tr_level level = checked_malloc(sizeof(*level));
     level->parent = parent;
     level->formals = NULL;
-    level->frame = F_newFrame(Temp_newlabel(), U_BoolList(TRUE, formals));
+    level->frame = F_newFrame(Temp_newlabel(), U_BoolList(TRUE, formals), fun_name);
 
     F_accessList tmp_formals = F_formals(level->frame);
     while (tmp_formals) {

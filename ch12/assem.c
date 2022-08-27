@@ -176,17 +176,23 @@ void AS_print(FILE *out, AS_instr i, E_map m)
     {
         case I_OPER:
             format(r, i->u.OPER.assem, i->u.OPER.dst, i->u.OPER.src, i->u.OPER.jumps, m);
+            if (r[0] != 0) {
+                fprintf(out, "\t%s", r);
+            }
             break;
         case I_LABEL:
             format(r, i->u.LABEL.assem, NULL, NULL, NULL, m);
+            if (r[0] != 0) {
+                fprintf(out, "%s", r);
+            }
             /* i->u.LABEL->label); */
             break;
         case I_MOVE:
             format(r, i->u.MOVE.assem, i->u.MOVE.dst, i->u.MOVE.src, NULL, m);
+            if (r[0] != 0) {
+                fprintf(out, "\t%s", r);
+            }
             break;
-    }
-    if (r[0] != 0) {
-        fprintf(out, "%s", r);
     }
 }
 

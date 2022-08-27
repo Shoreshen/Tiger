@@ -432,7 +432,7 @@ Tr_exp transDec(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_decList d
                     params = params->tail;
                 }
                 // Enter function declaration
-                Tr_level new_level = Tr_newLevel(level, escapes_head);
+                Tr_level new_level = Tr_newLevel(level, escapes_head, dec->u.function->name);
                 S_enter(
                     venv, 
                     dec->u.function->name, 

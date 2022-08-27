@@ -119,11 +119,10 @@ T_exp F_externalCall(char *s, T_expList args, F_accessList accs) {
 }
 AS_proc F_procEntryExit(F_frame frame, AS_instrList body) 
 {
-    char buf[100];
     AS_instrList procEntry = NULL, procExit = NULL;
 
-    sprintf(buf, "# PROCEDURE %s\n", S_name(frame->name));
     procEntry = AS_InstrLists(
+        AS_Label(get_heap_str("%s:\n", Temp_labelstring(frame->name)), frame->name),
         AS_Oper("push `s0\n", NULL, Temp_TempLists(F_FP(), NULL), NULL),
         AS_Move("mov `d0, `s0\n", Temp_TempLists(F_FP(), NULL), Temp_TempLists(F_SP(), NULL)),
         NULL
@@ -155,7 +154,7 @@ AS_proc F_procEntryExit(F_frame frame, AS_instrList body)
         ),
         procExit
     );
-    return AS_Proc(buf, body, "# END\n");
+    return AS_Proc(get_heap_str("# PROCEDURE %s START\n", S_name(frame->fun_name)), body, get_heap_str("# %s END\n", S_name(frame->fun_name)));
 }
 
 void F_printFrags(FILE* out, F_fragList frags)
@@ -209,9 +208,10 @@ F_access F_GetAccess(int *regCount, int *memCount, int escape)
         return F_InFrame(((*memCount) - 1) * F_WORD_SIZE);
     }
 }
-F_frame F_newFrame(Temp_label name, U_boolList formals)
+F_frame F_newFrame(Temp_label name, U_boolList formals, S_symbol fun_name)
 {
     F_frame f = checked_malloc(sizeof(*f));
+    f->fun_name = fun_name;
     f->name = name;
     f->formals = NULL;
     f->locals = NULL;

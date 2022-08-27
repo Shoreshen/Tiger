@@ -18,39 +18,33 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
     T_stmList stm_l;
     AS_instrList iList;
     struct RA_result ra;
-    
-    // Printing
-    fprintf(out, "====================================================================\n");
-    fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
-    
-    // fprintf(out, "**********************************\n");
-    // pr_stm(out, body, 0);
-    // fprintf(out, "\n");
-    
+
     stm_l = C_linearize(body);
     stm_l = C_traceSchedule(C_basicBlocks(stm_l));
-    
-    // fprintf(out, "**********************************\n");
-    // fprintf(out, "proc %s: \n", Temp_labelstring(frame->name));
-    // printStmList(out, stm_l);
-    // fprintf(out, "**********************************\n");
-    // fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
 
     iList = F_codegen(frame, stm_l);
-    // AS_proc iproc = F_procEntryExit(frame, iList);
-    // AS_printInstrList(out, iList, Temp_name());
     ra = RA_regAlloc(frame, iList);
+    AS_proc iproc = F_procEntryExit(frame, iList);
+    fprintf(out, "%s\n", iproc->prolog);
+    AS_printInstrList(out, iproc->body, ra.coloring);
+    fprintf(out, "%s\n", iproc->epilog);
+}
 
-    // fprintf(out, "**********************************\n");
-    fprintf(out, "proc instr %s: \n", Temp_labelstring(frame->name));
-    AS_printInstrList(out, iList, ra.coloring);
-
-    // fprintf(out, "====================================================================\n");
+void do_string(FILE *out, char *str, Temp_label L)
+{
+    fprintf(out, "%s: db ", Temp_labelstring(L));
+    int i = 0;
+    while (str[i]) {
+        fprintf(out, "%d,", str[i]);
+        i++;
+    }
+    fprintf(out, "0\n");
 }
 
 int main(int argc, char **argv) {
-    F_fragList frags = NULL;
-
+    F_fragList frags = NULL, frags_head = NULL;
+    FILE * out = stdout;
+    
     if (argc!=2) {
         fprintf(stderr,"usage: a.out filename\n"); 
         exit(1);
@@ -59,20 +53,29 @@ int main(int argc, char **argv) {
     // Parsing
     if (yyparse()) {
         printf("Parsing failed\n");
+        exit(1);
     }
     // Semantic analysis
     Esc_findEscape(ast_root);
-    frags = SEM_transProg(ast_root);
-    // Lowering
+    frags_head = SEM_transProg(ast_root);
+    // Lowering & print asm
+    fprintf(out, "segment .note.GNU-stack\n");
+    fprintf(out, "segment .text\n");
+    frags = frags_head;
     while (frags) {
         if (frags->head->kind == F_procFrag) {
-            do_proc(stdout, frags->head->u.proc.frame, frags->head->u.proc.body);
-        } else if (frags->head->kind == F_stringFrag) {
-            fprintf(stdout, ".string %s: \"%s\"\n", 
-                Temp_labelstring(frags->head->u.stringg.label), 
-                frags->head->u.stringg.str
-            );
-        } else {
+            do_proc(out, frags->head->u.proc.frame, frags->head->u.proc.body);
+        } else if (frags->head->kind != F_stringFrag) {
+            assert(0);
+        }
+        frags = frags->tail;
+    }
+    fprintf(out, "segment .data\n");
+    frags = frags_head;
+    while (frags) {
+        if (frags->head->kind == F_stringFrag) {
+            do_string(out, frags->head->u.stringg.str, frags->head->u.stringg.label);
+        } else if (frags->head->kind != F_procFrag) {
             assert(0);
         }
         frags = frags->tail;

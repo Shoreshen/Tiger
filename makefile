@@ -157,6 +157,12 @@ dump_nasm:./nasm/test.out
 	objdump -D ./nasm/test.out > ./nasm/test.s
 dbg_nasm:./nasm/test.out
 	gdb ./nasm/test.out
+./nasm/prt.o:./nasm/prt.asm
+	nasm -f elf64 $^ -o $@
+./nasm/prt.out:./nasm/prt.o ./nasm/prt.c
+	gcc $^ -no-pie -o $@
+run_prt:./nasm/prt.out
+	./nasm/prt.out
 # GitHub ========================================================================================
 sub_pull:
 	git submodule foreach --recursive 'git pull'
