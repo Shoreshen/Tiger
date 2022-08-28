@@ -140,7 +140,7 @@ run_ch12:ch12.out
 ./prog.o: ./prog.asm
 	nasm -f elf64 $< -o $@
 run.out: ./prog.o ./runtime.c
-	gcc $^ -no-pie -g -o $@
+	gcc $^ -no-pie -g -Wl,--wrap,getchar -o $@
 # Clean =========================================================================================
 clean:
 	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log \
