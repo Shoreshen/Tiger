@@ -204,7 +204,7 @@ expty transExp(Tr_level level, E_map venv, E_map tenv, Tr_exp done, A_exp e)
                 Ty_fieldList record = ty->u.record;
                 expty field;
                 Tr_expList tr_fields = NULL;
-                int size = 1;
+                int size = 0;
                 while (fields && record) {
                     if (fields->head->name != record->head->sym) {
                         EM_error(&e->pos, "Expr->record: field name mismatch");

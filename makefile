@@ -3,6 +3,7 @@
 # $<  表示第一个依赖文件
 # $?  表示比目标还要新的依赖文件列表
 # Variables =====================================================================================
+file        =
 PHONY 		= 
 CFLAGS		= -g -m64
 CH1_FILES	= $(shell ls ./ch1/*.c)
@@ -100,7 +101,7 @@ run_ch9:ch9.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
-# ch10 ===========================================================================================
+# ch10 ==========================================================================================
 ./ch10/tiger.tab.c ./ch10/tiger.tab.h: ./ch10/tiger.y
 	bison -d -Wcounterexamples -o ./ch10/tiger.tab.c $<
 ./ch10/tiger.yy.c:./ch10/tiger.tab.h ./ch10/tiger.l
@@ -111,7 +112,7 @@ run_ch10:ch10.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
-# ch11 ===========================================================================================
+# ch11 ==========================================================================================
 ./ch11/tiger.tab.c ./ch11/tiger.tab.h: ./ch11/tiger.y
 	bison -d -Wcounterexamples -o ./ch11/tiger.tab.c $<
 ./ch11/tiger.yy.c:./ch11/tiger.tab.h ./ch11/tiger.l
@@ -122,7 +123,7 @@ run_ch11:ch11.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
-# ch12 ===========================================================================================
+# ch12 ==========================================================================================
 ./ch12/tiger.tab.c ./ch12/tiger.tab.h: ./ch12/tiger.y
 	bison -d -Wcounterexamples -o ./ch12/tiger.tab.c $<
 ./ch12/tiger.yy.c:./ch12/tiger.tab.h ./ch12/tiger.l
@@ -133,6 +134,13 @@ run_ch12:ch12.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
+# build =========================================================================================
+./prog.asm: ch12.out $(file) 
+	./$< $(file) > log.asm
+./prog.o: ./prog.asm
+	nasm -f elf64 $< -o $@
+run.out: ./prog.o ./runtime.c
+	gcc $^ -no-pie -g -o $@
 # Clean =========================================================================================
 clean:
 	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log \
@@ -146,7 +154,8 @@ clean:
 		./ch9/*.yy.c ./ch9/*.tab.* \
 		./ch10/*.yy.c ./ch10/*.tab.* \
 		./ch11/*.yy.c ./ch11/*.tab.* \
-		./ch12/*.yy.c ./ch12/*.tab.*
+		./ch12/*.yy.c ./ch12/*.tab.* \
+		./prog.* ./log.* run.out
 PHONY += clean
 # Assem =========================================================================================
 ./nasm/test.o:./nasm/test.asm

@@ -16,8 +16,9 @@ char* syscalls =
     "extern concat\n"
     "extern not\n"
     "extern exit\n"
-    "extern check_malloc\n"
+    "extern checked_malloc\n"
     "extern stringEqual\n"
+    "extern printi\n"
 ;
 
 void E_map_push(E_map* stack) {
@@ -125,6 +126,14 @@ E_map E_base_venv(void)
         )
     );
     TAB_enter(&venv->table, S_Symbol("exit"), 
+        E_FunEntry(
+            Tr_outermost(),
+            Temp_newlabel(), 
+            Ty_TyList(Ty_Int(), NULL), 
+            Ty_Void()
+        )
+    );
+    TAB_enter(&venv->table, S_Symbol("printi"), 
         E_FunEntry(
             Tr_outermost(),
             Temp_newlabel(), 

@@ -14,16 +14,34 @@
 #include "regalloc.h"
 #include "env.h"
 
+#define DEBUG 1
+
 void do_proc(FILE *out, F_frame frame, T_stm body)
 {
     T_stmList stm_l;
     AS_instrList iList;
     struct RA_result ra;
 
+    if (DEBUG) {
+        pr_stm(stdout, body, 0);
+        fprintf(stdout, "\n\n");
+    }
+
     stm_l = C_linearize(body);
     stm_l = C_traceSchedule(C_basicBlocks(stm_l));
 
+    if (DEBUG) {
+        printStmList(stdout, stm_l);
+        fprintf(stdout, "\n\n");
+    }
+
     iList = F_codegen(frame, stm_l);
+
+    if (DEBUG) {
+        AS_printInstrList(stdout, iList, Temp_name());
+        fprintf(stdout, "\n\n");
+    }
+    
     ra = RA_regAlloc(frame, iList);
     AS_proc iproc = F_procEntryExit(frame, iList);
     fprintf(out, "%s\n", iproc->prolog);
@@ -44,7 +62,7 @@ void do_string(FILE *out, char *str, Temp_label L)
 
 int main(int argc, char **argv) {
     F_fragList frags = NULL, frags_head = NULL;
-    FILE * out = stdout;
+    FILE * out = fopen("prog.asm", "w");
     
     if (argc!=2) {
         fprintf(stderr,"usage: a.out filename\n"); 
@@ -56,11 +74,16 @@ int main(int argc, char **argv) {
         printf("Parsing failed\n");
         exit(1);
     }
+    if (DEBUG) {
+        print_exp(stdout, ast_root, 0);
+        fprintf(stdout, "\n\n");
+    }
     // Semantic analysis
     Esc_findEscape(ast_root);
     frags_head = SEM_transProg(ast_root);
     // Lowering & print asm
     fprintf(out, "%s\n", syscalls);
+    fprintf(out, "global tigermain\n");
     fprintf(out, "segment .note.GNU-stack\n");
     fprintf(out, "segment .text\n");
     frags = frags_head;

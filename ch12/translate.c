@@ -189,7 +189,7 @@ Tr_level Tr_outermost(void)
     if (out_most == NULL) {
         out_most = checked_malloc(sizeof(*out_most));
         out_most->parent = NULL;
-        out_most->frame = F_newFrame(Temp_newlabel(), NULL, S_Symbol("top_level"));
+        out_most->frame = F_newFrame(Temp_namedlabel("tigermain"), NULL, S_Symbol("top_level"));
         out_most->formals = NULL;
     }
     return out_most;
@@ -534,11 +534,11 @@ Tr_exp Tr_ifExp(Tr_exp test, Tr_exp then, Tr_exp elsee)
 Tr_exp Tr_recordExp(Tr_expList fields, int size)
 {
     Temp_temp r = Temp_newtemp();
-    int offset = 0;
+    int offset = (size - 1) * F_WORD_SIZE;
     T_stm stm = T_Move(
         T_Temp(r), 
         F_externalCall(
-            "check_malloc", 
+            "checked_malloc", 
             T_ExpList(T_Const(size * F_WORD_SIZE), NULL),
             F_AccessList(F_InReg(F_Keep_Regs(0)), NULL)
         )
@@ -552,7 +552,7 @@ Tr_exp Tr_recordExp(Tr_expList fields, int size)
             )
         );
         fields = fields->tail;
-        offset += F_WORD_SIZE;
+        offset -= F_WORD_SIZE;
     }
     return Tr_Ex(T_Eseq(stm, T_Temp(r)));
 }

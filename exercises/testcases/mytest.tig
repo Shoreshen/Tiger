@@ -1,0 +1,10 @@
+let 
+	type rectype = {name:string , id:int}
+	var rec1 := rectype {name="Name", id=0}
+	var rec2 := "Name"
+in
+	rec1.name := "asd";
+    rec1.id := 3;
+	if (rec2 = rec1.name) then
+    	print(rec1.name)
+end
