@@ -1,70 +1,53 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
-int tigermain(int a);
+long tigermain(long a);
 
-void* checked_malloc(int len) 
+void* checked_malloc(long len) 
 {
     void *p = malloc(len);
     assert(p);
     return p;
 }
 
-int *initArray(int size, int init)
+long *initArray(long size, long init)
 {
-    int i;
-    int *a = (int *)malloc(size * sizeof(int));
+    long i;
+    long* a = (long*)malloc(size * sizeof(long));
     for (i = 0; i < size; i++) {
         a[i] = init;
     }
     return a;
 }
 
-int *allocRecord(int size)
+long *allocRecord(long size)
 {
-    int i;
-    int *p, *a;
-    p = a = (int *)malloc(size);
-    for (i = 0; i < size; i += sizeof(int)) {
+    long i;
+    long *p, *a;
+    p = a = (long *)malloc(size);
+    for (i = 0; i < size; i += sizeof(long)) {
         *p++ = 0;
     }
     return a;
 }
 
-struct string
+long stringEqual(char* s, char* t)
 {
-    int length;
-    unsigned char chars[1];
-};
-
-int stringEqual(struct string *s, struct string *t)
-{
-    int i;
-    if (s == t) {
+    if (strcmp(s,t)) {
+        return 0;
+    } else {
         return 1;
     }
-    if (s->length != t->length) {
-        return 0;
-    }
-    for (i = 0; i < s->length; i++) {
-        if (s->chars[i] != t->chars[i]) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
-void print(struct string *s)
+void print(char* s)
 {
-    int i;
-    unsigned char *p = s->chars;
-    for (i = 0; i < s->length; i++, p++) {
-        putchar(*p);
-    }
+    printf(s);
 }
 
-void printi(int k)
+void printi(long k)
 {
 	printf("%d", k);
 }
@@ -74,93 +57,92 @@ void flush()
     fflush(stdout);
 }
 
-struct string consts[256];
-struct string empty = {0, ""};
+char consts[256][2] = {0};
+char empty = {0};
 
-int main()
+long main()
 {
-    int i;
+    long i;
     for (i = 0; i < 256; i++) {
-        consts[i].length = 1;
-        consts[i].chars[0] = i;
+        consts[i][0] = i;
     }
     return tigermain(0 /* static link */);
 }
 
-int ord(struct string *s)
+long ord(char* s)
 {
-    if (s->length == 0) {
+    if (s[0]) {
+        return s[0];
+    } else {
         return -1;
-    }
-    else {
-        return s->chars[0];
     }
 }
 
-struct string *chr(int i)
+char *chr(long i)
 {
     if (i < 0 || i >= 256) {
         printf("chr(%d) out of range\n", i);
         exit(1);
     }
-    return consts + i;
+    return (char*)&consts[i];
 }
 
-int size(struct string *s)
+long size(char *s)
 {
-    return s->length;
+    return strlen(s);
 }
 
-struct string *substring(struct string *s, int first, int n)
+char* substring(char *s, long first, long n)
 {
-    if (first < 0 || first + n > s->length) {
-        printf("substring([%d],%d,%d) out of range\n", s->length, first, n);
+    long length = strlen(s);
+    if (first < 0 || first + n > length) {
+        printf("substring([%d],%d,%d) out of range\n", length, first, n);
         exit(1);
     }
     if (n == 1) {
-        return consts + s->chars[first];
+        return (char*)&consts[first];
     }
-    struct string *t = (struct string *)malloc(sizeof(int) + n);
-    int i;
-    t->length = n;
+    char* t = (char*)malloc(n + 1);
+    long i;
     for (i = 0; i < n; i++) {
-        t->chars[i] = s->chars[first + i];
+        t[i] = s[first + i];
     }
+    t[n] = 0;
     return t;
 }
 
-struct string *concat(struct string *a, struct string *b)
+char* concat(char* a, char* b)
 {
-    if (a->length == 0) {
+    long len_a = strlen(a);
+    if (len_a == 0) {
         return b;
     }
-    else if (b->length == 0) {
+    long len_b = strlen(b);
+    if (len_b == 0) {
         return a;
-    } else {
-        int i, n = a->length + b->length;
-        struct string *t = (struct string *)malloc(sizeof(int) + n);
-        t->length = n;
-        for (i = 0; i < a->length; i++)
-            t->chars[i] = a->chars[i];
-        for (i = 0; i < b->length; i++)
-            t->chars[i + a->length] = b->chars[i];
-        return t;
-    }
+    } 
+    long i, n = len_a + len_b;
+    char* t = (char*)malloc(n + 1);
+    for (i = 0; i < len_a; i++)
+        t[i] = a[i];
+    for (i = 0; i < len_b; i++)
+        t[i + len_a] = b[i];
+    return t;
 }
 
-int not(int i)
+long not(long i)
 {
     return !i;
 }
 
 #undef getchar
 
-struct string *__wrap_getchar()
+char *__wrap_getchar()
 {
-    int i = getc(stdin);
+    long i = getc(stdin);
     if (i == EOF) {
         return &empty;
     } else {
-        return consts + i;
+        return (char*)&consts[i];
     }
 }
