@@ -81,12 +81,15 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il)
 
     while (TRUE) {
         flow = FG_AssemFlowGraph(il);
-        // fprintf(stdout, "**********************************\n");
-        // G_show(stdout, G_nodes(flow), print_inst);
+        if (DEBUG) {
+            fprintf(stdout, "Flow **********************************\n");
+            G_show(stdout, G_nodes(flow), print_inst);
+        }
         lg = Live_liveness(flow);
-        // fprintf(stdout, "**********************************\n");
-        // G_show(stdout, G_nodes(lg.graph), print_temp);
-        // break;
+        if (DEBUG) {
+            fprintf(stdout, "Live **********************************\n");
+            G_show(stdout, G_nodes(lg.graph), print_temp);
+        }
         col = COL_color(lg.graph, lg.worklistMoves, lg.moveList, lg.spillCost, lg.tmp2node);
         if (col.spills == NULL) {
             break;

@@ -75,7 +75,7 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
     G_node node = NULL, n_dst = NULL, n_src = NULL, n_out = NULL, n_spill;
     G_node n_move_src = NULL, n_move_dst = NULL;
     G_node n_sp, n_fp;
-    Temp_tempList t_src = NULL, t_dst = NULL, t_out = NULL, t_spill;
+    Temp_tempList t_src = NULL, t_dst = NULL, t_out = NULL, tmp_tl = NULL, t_spill;
     AS_instr i_move;
     AS_instrList i_move_list;
     long spill;
@@ -88,7 +88,6 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
         .tmp2node = E_empty_env()
     };
     
-
     n_sp = findOrCreateNode(lg.tmp2node, lg.graph, F_SP());
     n_fp = findOrCreateNode(lg.tmp2node, lg.graph, F_FP());
 
@@ -127,12 +126,13 @@ struct Live_graph solveLiveness(G_graph flow, E_map in_map, E_map out_map)
         // Creating inference graph
         while (t_dst) {
             n_dst = findOrCreateNode(lg.tmp2node, lg.graph, t_dst->head);
-            while (t_out) {
-                n_out = findOrCreateNode(lg.tmp2node, lg.graph, t_out->head);
+            tmp_tl = t_out;
+            while (tmp_tl) {
+                n_out = findOrCreateNode(lg.tmp2node, lg.graph, tmp_tl->head);
                 if (n_out != n_dst && n_out != n_move_src && !G_adjacent(n_dst, n_out)) {
                     G_addEdge(n_out, n_dst);
                 }
-                t_out = t_out->tail;
+                tmp_tl = tmp_tl->tail;
             }
             // SP & FP interfere with all other virtual registers
             if (n_sp != n_dst && !G_adjacent(n_dst, n_sp)) {

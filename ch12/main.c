@@ -14,8 +14,6 @@
 #include "regalloc.h"
 #include "env.h"
 
-#define DEBUG 1
-
 void do_proc(FILE *out, F_frame frame, T_stm body)
 {
     T_stmList stm_l;
@@ -43,6 +41,12 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
     }
     
     ra = RA_regAlloc(frame, iList);
+
+    if (DEBUG) {
+        AS_printInstrList(stdout, iList, Temp_name());
+        fprintf(stdout, "\n\n");
+    }
+
     AS_proc iproc = F_procEntryExit(frame, iList);
     fprintf(out, "%s\n", iproc->prolog);
     AS_printInstrList(out, iproc->body, ra.coloring);

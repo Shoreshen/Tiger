@@ -39,6 +39,7 @@ G_graph FG_AssemFlowGraph(AS_instrList il)
                 E_enter(L_map, i_last->u.LABEL.label, n);
             }
             if (n_last) {
+                // If previous instruction is not jmp, then prev-instruction point to current instruction
                 i_n_last = (AS_instr)G_nodeInfo(n_last);
                 if (!(i_n_last->kind == I_OPER && i_n_last->u.OPER.jumps != NULL && i_n_last->u.OPER.assem[2] == 'p')) {
                     G_addEdge(n_last, n);

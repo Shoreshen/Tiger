@@ -397,7 +397,7 @@ Temp_temp munchExp(T_exp e)
             Temp_temp r = Temp_newtemp();
             emit(AS_Oper(
                 get_heap_str("call %s\n", Temp_labelstring(e->u.CALL.fun->u.NAME)),
-                Temp_TempLists(F_RV(), NULL),
+                F_caller_keep_regs(),
                 list,
                 NULL
             ));

@@ -8,6 +8,8 @@
 #include <stdarg.h>
 #include "../uthash/include/uthash.h"
 
+#define DEBUG 1
+
 #define TRUE 1
 #define FALSE 0
 #define STEP_STR_LEN 128

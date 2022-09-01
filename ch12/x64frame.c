@@ -17,27 +17,27 @@ enum REG {
     x64_RBP = 6,
     x64_RSP = 7,
     x64_RAX = 8,
-    x64_RBX = 7,
-    x64_R10 = 9,
-    x64_R11 = 10,
-    x64_R12 = 11,
-    x64_R13 = 12,
-    x64_R14 = 13,
-    x64_R15 = 14,
+    x64_RBX = 9,
+    x64_R10 = 10,
+    x64_R11 = 11,
+    x64_R12 = 12,
+    x64_R13 = 13,
+    x64_R14 = 14,
+    x64_R15 = 15,
 };
 Temp_temp x64_regs_temp[F_COLORABLE_REGS] = { NULL };
 char* x64_reg_names[F_COLORABLE_REGS] = {
-    "rdi",
-    "rsi",
-    "rdx",
-    "rcx",
-    "r8",
-    "r9",
-    "rbp",
-    "rsp",
-    "rax",
-    "rbx",
-    "r10",
+    "rdi",  // 0
+    "rsi",  // 1
+    "rdx",  // 2
+    "rcx",  // 3
+    "r8",   // 4
+    "r9",   // 5
+    "rbp",  // 6
+    "rsp",  // 7
+    "rax",  // 8
+    "rbx",  // 9
+    "r10",  // 10
     "r11",
     "r12",
     "r13",
@@ -88,6 +88,72 @@ Temp_temp F_Keep_Regs(int i)
     // x86-64 architecture use rdi, rsi, rdx, rcx, r8, r9 to pass first 6 formal parameters
     // Thus returning constant register number
     return get_x64_reg(i);
+}
+
+Temp_tempList all_regs = NULL;
+
+Temp_tempList F_all_regs()
+{
+    if (!all_regs) {
+        all_regs = Temp_TempLists(
+            get_x64_reg(x64_RDI),
+            get_x64_reg(x64_RSI),
+            get_x64_reg(x64_RDX),
+            get_x64_reg(x64_RCX),
+            get_x64_reg(x64_R8),
+            get_x64_reg(x64_R9),
+            get_x64_reg(x64_RBP),
+            get_x64_reg(x64_RSP),
+            get_x64_reg(x64_RAX),
+            get_x64_reg(x64_RBX),
+            get_x64_reg(x64_R10),
+            get_x64_reg(x64_R11),
+            get_x64_reg(x64_R12),
+            get_x64_reg(x64_R13),
+            get_x64_reg(x64_R14),
+            get_x64_reg(x64_R15),
+            NULL
+        );
+    }
+    return all_regs;
+}
+
+Temp_tempList caller_save_regs = NULL;
+
+Temp_tempList F_caller_keep_regs()
+{
+    if (!caller_save_regs) {
+        caller_save_regs = Temp_TempLists(
+            get_x64_reg(x64_RAX),
+            get_x64_reg(x64_RCX),
+            get_x64_reg(x64_RDX),
+            get_x64_reg(x64_RSI),
+            get_x64_reg(x64_RDI),
+            get_x64_reg(x64_R8),
+            get_x64_reg(x64_R9),
+            get_x64_reg(x64_R10),
+            get_x64_reg(x64_R11),
+            NULL
+        );
+    }
+    return caller_save_regs;
+}
+
+Temp_tempList callee_save_regs = NULL;
+
+Temp_tempList F_callee_keep_regs()
+{
+    if (!callee_save_regs) {
+        callee_save_regs = Temp_TempLists(
+            get_x64_reg(x64_RBX),
+            get_x64_reg(x64_R12),
+            get_x64_reg(x64_R13),
+            get_x64_reg(x64_R14),
+            get_x64_reg(x64_R15),
+            NULL
+        );
+    }
+    return callee_save_regs;
 }
 
 F_fragList F_FragList(F_frag head, F_fragList tail)

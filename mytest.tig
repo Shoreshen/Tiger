@@ -8,3 +8,19 @@ in
 	if (rec2 = rec1.name) then
     	print(rec1.name)
 end
+
+
+/* let 
+	type rectype = {name:string , id:int}
+	var rec1 := rectype {name="Name", id=0}
+	var rec2 := "asd"
+	function test (n: int) : int = (
+		rec1.name := "asd";
+		rec1.id := n / 2;
+		if (rec2 = rec1.name) then
+			print(rec1.name);
+		rec1.id
+	)
+in
+	test(6)
+end */

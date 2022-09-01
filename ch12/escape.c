@@ -58,7 +58,7 @@ void traverseExp(E_map env, int depth, A_exp e)
         case A_seqExp: {
             A_expList seq = e->u.seq;
             while (seq) {
-                traverseExp(env, depth, e->u.seq->head);
+                traverseExp(env, depth, seq->head);
                 seq = seq->tail;
             }
             return;
