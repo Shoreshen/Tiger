@@ -213,7 +213,7 @@ void munchArgRestore(F_accessList accs)
     if (count) {
         emit(AS_Oper(
             get_heap_str("add `s0, %d\n", count * F_WORD_SIZE), 
-            NULL, 
+            Temp_TempLists(F_SP(), NULL), 
             Temp_TempLists(F_SP(), NULL), 
             NULL
         ));

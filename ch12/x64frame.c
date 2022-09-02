@@ -208,13 +208,13 @@ void set_callee_regs(Temp_temp r, E_map m, char* callee_saved)
         if (s == x64_reg_names[x64_RBX]) {
             callee_saved[x64_RBX - 6] = 1;
         } else if (s == x64_reg_names[x64_R12]) {
-            callee_saved[x64_RBX - 6] = 1;
+            callee_saved[x64_R12 - 6] = 1;
         } else if (s == x64_reg_names[x64_R13]) {
-            callee_saved[x64_RBX - 6] = 1;
+            callee_saved[x64_R13 - 6] = 1;
         } else if (s == x64_reg_names[x64_R14]) {
-            callee_saved[x64_RBX - 6] = 1;
+            callee_saved[x64_R14 - 6] = 1;
         } else if (s == x64_reg_names[x64_R15]) {
-            callee_saved[x64_RBX - 6] = 1;
+            callee_saved[x64_R15 - 6] = 1;
         }
     }
 }
@@ -270,13 +270,16 @@ AS_proc F_procEntryExit(F_frame frame, AS_instrList body, E_map m)
                 AS_Oper("push `s0\n", NULL, Temp_TempLists(get_x64_reg(i + 6), NULL), NULL),
                 callee_push
             );
+        }
+    }
+    for (i = 4; i >= 0; i--) {
+        if (callee_saved[i]) {
             callee_pop = AS_InstrList(
                 AS_Oper("pop `s0\n", NULL, Temp_TempLists(get_x64_reg(i + 6), NULL), NULL),
                 callee_pop
             );
         }
     }
-
     procEntry = AS_InstrLists(
         AS_Label(get_heap_str("%s:\n", Temp_labelstring(frame->name)), frame->name),
         AS_Oper("push `s0\n", NULL, Temp_TempLists(F_FP(), NULL), NULL),
