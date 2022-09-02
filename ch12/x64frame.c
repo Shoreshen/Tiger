@@ -14,16 +14,16 @@ enum REG {
     x64_RCX = 3,
     x64_R8  = 4,
     x64_R9  = 5, //First 6 registers are used for passing parameters
-    x64_RBP = 6,
-    x64_RSP = 7,
-    x64_RAX = 8,
-    x64_RBX = 9,
-    x64_R10 = 10,
-    x64_R11 = 11,
-    x64_R12 = 12,
-    x64_R13 = 13,
-    x64_R14 = 14,
-    x64_R15 = 15,
+    x64_RBX = 6,
+    x64_R12 = 7,
+    x64_R13 = 8,
+    x64_R14 = 9,
+    x64_R15 = 10, // 6-10 callee saved registers
+    x64_RBP = 11,
+    x64_RSP = 12,
+    x64_RAX = 13,
+    x64_R10 = 14,
+    x64_R11 = 15,
 };
 Temp_temp x64_regs_temp[F_COLORABLE_REGS] = { NULL };
 char* x64_reg_names[F_COLORABLE_REGS] = {
@@ -33,16 +33,16 @@ char* x64_reg_names[F_COLORABLE_REGS] = {
     "rcx",  // 3
     "r8",   // 4
     "r9",   // 5
-    "rbp",  // 6
-    "rsp",  // 7
-    "rax",  // 8
-    "rbx",  // 9
-    "r10",  // 10
-    "r11",
-    "r12",
-    "r13",
-    "r14",
-    "r15"
+    "rbx",  // 6
+    "r12",  // 7
+    "r13",  // 8
+    "r14",  // 9
+    "r15",  // 10
+    "rbp",  // 11
+    "rsp",  // 12
+    "rax",  // 13
+    "r10",  // 14
+    "r11",  // 15
 };
 int pre_colored(Temp_temp t)
 {
@@ -56,7 +56,7 @@ Temp_temp get_x64_reg(int reg)
     if (!x64_regs_temp[reg]) {
         Temp_temp p = checked_malloc(sizeof(*p));
         p->num = (int) reg;
-        Temp_enter(Temp_name(), p, get_heap_str("%s", x64_reg_names[reg]));
+        Temp_enter(Temp_name(), p, x64_reg_names[reg]);
         x64_regs_temp[reg] = p;
     }
     return x64_regs_temp[reg];
@@ -183,9 +183,99 @@ T_exp F_externalCall(char *s, T_expList args, F_accessList accs) {
     // cdcel need to 
     return T_Call(T_Name(Temp_namedlabel(s)), args, accs, NULL);
 }
-AS_proc F_procEntryExit(F_frame frame, AS_instrList body) 
+
+int callee_saved(Temp_temp reg)
 {
-    AS_instrList procEntry = NULL, procExit = NULL;
+    if (
+        reg->num == x64_RBX ||
+        reg->num == x64_R12 ||
+        reg->num == x64_R13 ||
+        reg->num == x64_R14 ||
+        reg->num == x64_R15
+    ) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void set_callee_regs(Temp_temp r, E_map m, char* callee_saved)
+{
+    char* s = NULL;
+    if (r->num >= 6 && r->num <= 10) {
+        callee_saved[r->num - 6] = 1;
+    } else {
+        s = Temp_look(m, r);
+        if (s == x64_reg_names[x64_RBX]) {
+            callee_saved[x64_RBX - 6] = 1;
+        } else if (s == x64_reg_names[x64_R12]) {
+            callee_saved[x64_RBX - 6] = 1;
+        } else if (s == x64_reg_names[x64_R13]) {
+            callee_saved[x64_RBX - 6] = 1;
+        } else if (s == x64_reg_names[x64_R14]) {
+            callee_saved[x64_RBX - 6] = 1;
+        } else if (s == x64_reg_names[x64_R15]) {
+            callee_saved[x64_RBX - 6] = 1;
+        }
+    }
+}
+
+void scan_callee_regs(AS_instrList body, E_map m, char* callee_saved)
+{
+    char* s = NULL;
+    AS_instr i = NULL;
+    Temp_tempList dst = NULL;
+    while (body) {
+        i = body->head;
+        switch (i->kind) {
+            case I_OPER:
+                if (
+                    // Instructions change regs: sub,pop,mov,imul,add
+                    // Instructions do not write callee saved regs: push,jne,jmp,jle,jle,jle,jge,jg,je,idiv,cmp,call
+                    i->u.OPER.assem[0] == 'a' || 
+                    i->u.OPER.assem[0] == 'm' || 
+                    i->u.OPER.assem[0] == 's' ||
+                    (i->u.OPER.assem[0] == 'i' && i->u.OPER.assem[1] == 'm') ||
+                    (i->u.OPER.assem[0] == 'p' && i->u.OPER.assem[1] == 'o')
+                ) {
+                    dst = i->u.OPER.dst;
+                    while (dst) {
+                        set_callee_regs(dst->head, m, callee_saved);
+                        dst = dst->tail;
+                    }
+                }
+                break;
+            case I_MOVE:
+                dst = i->u.OPER.dst;
+                while (dst) {
+                    set_callee_regs(dst->head, m, callee_saved);
+                    dst = dst->tail;
+                }
+                break;
+        }
+        body = body->tail;
+    }
+}
+
+AS_proc F_procEntryExit(F_frame frame, AS_instrList body, E_map m) 
+{
+    AS_instrList procEntry = NULL, procExit = NULL, callee_push = NULL, callee_pop = NULL;
+    char callee_saved[5] = {0};
+    int i;
+
+    scan_callee_regs(body, m, callee_saved);
+
+    for (i = 0; i < 5; i++) {
+        if (callee_saved[i]) {
+            callee_push = AS_InstrList(
+                AS_Oper("push `s0\n", NULL, Temp_TempLists(get_x64_reg(i + 6), NULL), NULL),
+                callee_push
+            );
+            callee_pop = AS_InstrList(
+                AS_Oper("pop `s0\n", NULL, Temp_TempLists(get_x64_reg(i + 6), NULL), NULL),
+                callee_pop
+            );
+        }
+    }
 
     procEntry = AS_InstrLists(
         AS_Label(get_heap_str("%s:\n", Temp_labelstring(frame->name)), frame->name),
@@ -213,12 +303,13 @@ AS_proc F_procEntryExit(F_frame frame, AS_instrList body)
         AS_Oper("ret\n", NULL, NULL, NULL),
         NULL
     );
-    body = AS_splice(
-        AS_splice(
-            procEntry,
-            body
-        ),
-        procExit
+    body = AS_splices(
+        procEntry,
+        callee_push,
+        body,
+        callee_pop,
+        procExit,
+        NULL
     );
     return AS_Proc(get_heap_str("; PROCEDURE %s START\n", S_name(frame->fun_name)), body, get_heap_str("; %s END\n", S_name(frame->fun_name)));
 }

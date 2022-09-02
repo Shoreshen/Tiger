@@ -71,7 +71,7 @@ F_frag F_StringFrag(Temp_label label, char* str);
 F_frag F_ProcFrag(T_stm body, F_frame frame);
 F_access F_GetAccess(int *regCount, int *memCount, int escape);
 T_exp F_externalCall(char *s, T_expList args, F_accessList accs);
-AS_proc F_procEntryExit(F_frame frame, AS_instrList body);
+AS_proc F_procEntryExit(F_frame frame, AS_instrList body, E_map m);
 void F_printFrags(FILE* out, F_fragList frags);
 Temp_tempList F_rm_uncolorable_regs(Temp_tempList a);
 Temp_tempList F_caller_keep_regs();

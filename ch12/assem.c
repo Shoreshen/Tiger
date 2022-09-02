@@ -86,6 +86,21 @@ AS_instrList AS_splice(AS_instrList a, AS_instrList b)
     return a;
 }
 
+AS_instrList AS_splices(AS_instrList instrlists, ...)
+{
+    va_list i;
+    AS_instrList arg, head;
+    va_start(i, instrlists);
+
+    head = AS_splice(instrlists, NULL);
+    while (arg = va_arg(i, AS_instrList)) {
+        head = AS_splice(head, arg);
+    }
+
+    va_end(i);
+    return head;
+}
+
 static Temp_temp nthTemp(Temp_tempList list, int i)
 {
     assert(list);
@@ -172,8 +187,7 @@ void format(char *result, char *assem, Temp_tempList dst, Temp_tempList src, AS_
 void AS_print(FILE *out, AS_instr i, E_map m)
 {
     char r[200]; /* result */
-    switch (i->kind)
-    {
+    switch (i->kind) {
         case I_OPER:
             format(r, i->u.OPER.assem, i->u.OPER.dst, i->u.OPER.src, i->u.OPER.jumps, m);
             if (r[0] != 0) {

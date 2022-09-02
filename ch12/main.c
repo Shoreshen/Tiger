@@ -47,7 +47,7 @@ void do_proc(FILE *out, F_frame frame, T_stm body)
         fprintf(stdout, "\n\n");
     }
 
-    AS_proc iproc = F_procEntryExit(frame, iList);
+    AS_proc iproc = F_procEntryExit(frame, iList, ra.coloring);
     fprintf(out, "%s\n", iproc->prolog);
     AS_printInstrList(out, iproc->body, ra.coloring);
     fprintf(out, "%s\n", iproc->epilog);
