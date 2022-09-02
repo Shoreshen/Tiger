@@ -245,10 +245,12 @@ void scan_callee_regs(AS_instrList body, E_map m, char* callee_saved)
                 }
                 break;
             case I_MOVE:
-                dst = i->u.OPER.dst;
-                while (dst) {
-                    set_callee_regs(dst->head, m, callee_saved);
-                    dst = dst->tail;
+                if (i->u.OPER.assem[0] != '#') {
+                    dst = i->u.OPER.dst; 
+                    while (dst) {
+                        set_callee_regs(dst->head, m, callee_saved);
+                        dst = dst->tail;
+                    }
                 }
                 break;
         }
