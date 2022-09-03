@@ -1,4 +1,4 @@
-let 
+/* let 
 	type rectype = {name:string , id:int}
 	var rec1 := rectype {name="Name", id=0}
 	var rec2 := "asd"
@@ -7,10 +7,10 @@ in
     rec1.id := 3;
 	if (rec2 = rec1.name) then
     	print(rec1.name)
-end
+end */
 
 
-/* let 
+let 
 	type rectype = {name:string , id:int}
 	var rec1 := rectype {name="Name", id=0}
 	var rec2 := "asd"
@@ -23,4 +23,4 @@ end
 	)
 in
 	test(6)
-end */
+end

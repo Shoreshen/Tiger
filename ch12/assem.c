@@ -79,6 +79,9 @@ AS_instrList AS_splice(AS_instrList a, AS_instrList b)
     if (a == NULL) {
         return b;
     }
+    if (b == NULL) {
+        return a;
+    }
     while (p->tail != NULL) {
         p = p->tail;
     }
@@ -93,8 +96,10 @@ AS_instrList AS_splices(AS_instrList instrlists, ...)
     va_start(i, instrlists);
 
     head = AS_splice(instrlists, NULL);
-    while (arg = va_arg(i, AS_instrList)) {
+    arg = va_arg(i, AS_instrList);
+    while ((long)arg != -1) {
         head = AS_splice(head, arg);
+        arg = va_arg(i, AS_instrList);
     }
 
     va_end(i);

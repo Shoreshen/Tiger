@@ -308,13 +308,14 @@ AS_proc F_procEntryExit(F_frame frame, AS_instrList body, E_map m)
         AS_Oper("ret\n", NULL, NULL, NULL),
         NULL
     );
+    // callee_push & callee_pop may be NULL, thus use -1 as terminator
     body = AS_splices(
         procEntry,
         callee_push,
         body,
         callee_pop,
         procExit,
-        NULL
+        -1L // Declare 64 bit constant of -1
     );
     return AS_Proc(get_heap_str("; PROCEDURE %s START\n", S_name(frame->fun_name)), body, get_heap_str("; %s END\n", S_name(frame->fun_name)));
 }
