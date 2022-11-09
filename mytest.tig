@@ -19,7 +19,8 @@ let
 		rec1.id := n / 2;
 		if (rec2 = rec1.name) then
 			print(rec1.name);
-		rec1.id
+		printi(rec1.id);
+		rec1.id 
 	)
 in
 	test(6)
