@@ -3,11 +3,79 @@
 # $<  表示第一个依赖文件
 # $?  表示比目标还要新的依赖文件列表
 # Variables =====================================================================================
-file        = mytest.tig
-PHONY 		= 
-CFLAGS		= -g -m64
-CH1_FILES	= $(shell ls ./ch1/*.c)
-BISON_FLAG	:= -d -Wcounterexamples
+file        	= mytest.tig
+PHONY 			= 
+CFLAGS			= -g -m64
+CH1_FILES		= $(shell ls ./ch1/*.c)
+CHAPTER			= ch13
+COMPILER		= $(CHAPTER).out
+COMPILER_DIR	= ./$(CHAPTER)/compiler
+RUNTIME_DIR		= ./$(CHAPTER)/runtime
+
+test:
+	@echo $(COMPILER_DIR)
+# Compiler ======================================================================================
+$(COMPILER_DIR)/tiger.tab.c $(COMPILER_DIR)/tiger.tab.h: $(COMPILER_DIR)/tiger.y
+	bison -d -Wcounterexamples -o $(COMPILER_DIR)/tiger.tab.c $<
+$(COMPILER_DIR)/tiger.yy.c:$(COMPILER_DIR)/tiger.tab.h $(COMPILER_DIR)/tiger.l
+	flex --outfile=$@ $(COMPILER_DIR)/tiger.l
+$(CHAPTER).out:$(COMPILER_DIR)/tiger.yy.c $(COMPILER_DIR)/tiger.tab.c $(COMPILER_DIR)/tiger.tab.h $(COMPILER_DIR)/*.c $(COMPILER_DIR)/*.h
+	gcc $(CFLAGS) $(COMPILER_DIR)/*.c -o $@
+run_$(CHAPTER):$(CHAPTER).out
+	@echo "Please type in file names: "; \
+	read file; \
+	./$< $$file
+# prog ==========================================================================================
+./prog.asm: $(COMPILER) $(file) 
+	./$< $(file) > log.asm
+./prog.o: ./prog.asm
+	nasm -f elf64 $< -o $@
+run.out: ./prog.o $(RUNTIME_DIR)/runtime.c
+	gcc $^ -no-pie -g -Wl,--wrap,getchar -o $@
+# Clean =========================================================================================
+clean:
+	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log \
+	    ./ch2/*.yy.c \
+	    ./ch3/*.yy.c ./ch3/*.tab.* \
+	    ./ch4/*.yy.c ./ch4/*.tab.* \
+	    ./ch5/*.yy.c ./ch5/*.tab.* \
+	    ./ch6/*.yy.c ./ch6/*.tab.* \
+	    ./ch7/*.yy.c ./ch7/*.tab.* \
+	    ./ch8/*.yy.c ./ch8/*.tab.* \
+		./ch9/*.yy.c ./ch9/*.tab.* \
+		./ch10/*.yy.c ./ch10/*.tab.* \
+		./ch11/*.yy.c ./ch11/*.tab.* \
+		./ch12/*.yy.c ./ch12/*.tab.* \
+		./ch13/compiler/*.yy.c ./ch13/compiler/*.tab.* \
+		./prog.* ./log.* run.out
+PHONY += clean
+# Assem =========================================================================================
+./nasm/test.o:./nasm/test.asm
+	nasm -f elf64 ./nasm/test.asm -o ./nasm/test.o
+./nasm/test.out:./nasm/test.o
+	ld ./nasm/test.o -o ./nasm/test.out
+dump_nasm:./nasm/test.out
+	objdump -D ./nasm/test.out > ./nasm/test.s
+dbg_nasm:./nasm/test.out
+	gdb ./nasm/test.out
+./nasm/prt.o:./nasm/prt.asm
+	nasm -f elf64 $^ -o $@
+./nasm/prt.out:./nasm/prt.o ./nasm/prt.c
+	gcc $^ -no-pie -o $@
+run_prt:./nasm/prt.out
+	./nasm/prt.out
+# GitHub ========================================================================================
+sub_pull:
+	git submodule foreach --recursive 'git pull'
+commit: clean
+	git add -A
+	@echo "Please type in commit comment: "; \
+	read comment; \
+	git commit -m"$$comment"
+sync: sub_pull commit 
+	git push -u origin master
+
+PHONY += commit sync
 # ch1 ===========================================================================================
 ch1.out:/ch1/*.c
 	gcc $(CFLAGS) ./ch1/*.c -o $@
@@ -134,55 +202,5 @@ run_ch12:ch12.out
 	@echo "Please type in file names: "; \
 	read file; \
 	./$< $$file
-# build =========================================================================================
-./prog.asm: ch12.out $(file) 
-	./$< $(file) > log.asm
-./prog.o: ./prog.asm
-	nasm -f elf64 $< -o $@
-run.out: ./prog.o ./runtime.c
-	gcc $^ -no-pie -g -Wl,--wrap,getchar -o $@
-# Clean =========================================================================================
-clean:
-	-rm *.out ./nasm/test.com ./nasm/test.s 'log copy' log \
-	    ./ch2/*.yy.c \
-	    ./ch3/*.yy.c ./ch3/*.tab.* \
-	    ./ch4/*.yy.c ./ch4/*.tab.* \
-	    ./ch5/*.yy.c ./ch5/*.tab.* \
-	    ./ch6/*.yy.c ./ch6/*.tab.* \
-	    ./ch7/*.yy.c ./ch7/*.tab.* \
-	    ./ch8/*.yy.c ./ch8/*.tab.* \
-		./ch9/*.yy.c ./ch9/*.tab.* \
-		./ch10/*.yy.c ./ch10/*.tab.* \
-		./ch11/*.yy.c ./ch11/*.tab.* \
-		./ch12/*.yy.c ./ch12/*.tab.* \
-		./prog.* ./log.* run.out
-PHONY += clean
-# Assem =========================================================================================
-./nasm/test.o:./nasm/test.asm
-	nasm -f elf64 ./nasm/test.asm -o ./nasm/test.o
-./nasm/test.out:./nasm/test.o
-	ld ./nasm/test.o -o ./nasm/test.out
-dump_nasm:./nasm/test.out
-	objdump -D ./nasm/test.out > ./nasm/test.s
-dbg_nasm:./nasm/test.out
-	gdb ./nasm/test.out
-./nasm/prt.o:./nasm/prt.asm
-	nasm -f elf64 $^ -o $@
-./nasm/prt.out:./nasm/prt.o ./nasm/prt.c
-	gcc $^ -no-pie -o $@
-run_prt:./nasm/prt.out
-	./nasm/prt.out
-# GitHub ========================================================================================
-sub_pull:
-	git submodule foreach --recursive 'git pull'
-commit: clean
-	git add -A
-	@echo "Please type in commit comment: "; \
-	read comment; \
-	git commit -m"$$comment"
-sync: sub_pull commit 
-	git push -u origin master
-
-PHONY += commit sync
 # PHONY =========================================================================================
 .PHONY: $(PHONY)
